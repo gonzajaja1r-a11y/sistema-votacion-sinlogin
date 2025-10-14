@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %}Votación - Sistema de Votación{% endblock %}
+
+{% block content %}
+<style>
+    .page-header { display: flex; align-items: center; gap: 15px; margin-bottom: 50px; }
+    .logo-main { width: 40px; height: 40px; background-color: #4C46C7; border-radius: 50%; }
+    .page-header h1 { color: #4C46C7; font-size: 2rem; font-weight: 600; }
+    .candidates-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 50px; margin-bottom: 50px; }
+    .candidate-item { text-align: center; cursor: pointer; padding: 20px; border-radius: 12px; transition: background-color 0.3s ease; border: 2px solid transparent; }
+    .candidate-item:hover { background-color: #f8f8ff; }
+    .candidate-item.selected { background-color: #f0f0ff; border-color: #4C46C7; }
+    .candidate-icon { font-size: 4rem; margin-bottom: 15px; }
+    .candidate-name { font-size: 1.5rem; font-weight: 600; color: #333; margin-bottom: 8px; }
+    .candidate-party { color: #666; font-size: 1rem; }
+    .vote-submission { text-align: center; }
+    .voted-message { text-align: center; padding: 60px 20px; }
+    .voted-message .icon { font-size: 5rem; color: #22c55e; }
+    .voted-message h2 { font-size: 2.5rem; color: #333; margin-top: 20px; margin-bottom: 15px; }
+</style>
+
+{% if current_user.ha_votado %}
+<div class="voted-message">
+    <div class="icon">✓</div>
+    <h2>¡Gracias por votar!</h2>
+    <p>Tu voto ha sido registrado correctamente y tu participación es muy importante. Ya no puedes volver a votar.</p>

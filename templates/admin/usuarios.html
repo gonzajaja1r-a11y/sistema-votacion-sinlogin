@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}Gestión de Votantes - Admin{% endblock %}
+
+{% block content %}
+<style>
+    .page-header { display: flex; align-items: center; gap: 15px; margin-bottom: 30px; }
+    .logo-main { width: 40px; height: 40px; background-color: #4C46C7; border-radius: 50%; }
+    .page-header h1 { color: #4C46C7; font-size: 2rem; font-weight: 600; }
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 25px; margin-bottom: 30px; }
+    .stat-card { background: white; padding: 25px; border: 1px solid #e5e7eb; border-radius: 12px; }
+    .stat-label { font-size: 1rem; color: #666; font-weight: 500; margin-bottom: 8px; }
+    .stat-number { font-size: 2.5rem; font-weight: 700; color: #111827; }
+    .filter-card { background: white; padding: 25px; border: 1px solid #e5e7eb; border-radius: 12px; margin-bottom: 30px; }
+    .filters { display: flex; gap: 20px; align-items: flex-end; flex-wrap: wrap; }
+    .filter-group { flex: 1; min-width: 150px; }
+    .filter-buttons { display: flex; gap: 10px; }
+    .btn-secondary { background-color: #e5e7eb; color: #374151; padding: 10px 20px; border: none; border-radius: 50px; }
+    .table-card { background: white; border: 1px solid #e5e7eb; border-radius: 12px; overflow-x: auto; }
+    .usuarios-table { width: 100%; border-collapse: collapse; }
+    .usuarios-table th, .usuarios-table td { padding: 16px; text-align: left; border-bottom: 1px solid #e5e7eb; white-space: nowrap; }
+    .usuarios-table th { font-weight: 600; font-size: 0.9rem; color: #6b7280; text-transform: uppercase; }
+    .user-cell { display: flex; align-items: center; gap: 15px; }
+    .user-avatar { width: 40px; height: 40px; border-radius: 50%; background-color: #e5e7eb; color: #4C46C7; display: flex; align-items: center; justify-content: center; font-weight: 600; }
+    .user-name { font-weight: 600; }
+    .user-email { font-size: 0.9rem; color: #6b7280; }
+    .status-badge { padding: 5px 12px; border-radius: 50px; font-size: 0.8rem; font-weight: 600; }
+    .status-voto { background: #dcfce7; color: #166534; }
+    .status-no-voto { background: #fef9c3; color: #854d0e; }
+</style>
+
+<div class="page-header">
+    <div class="logo-main"></div>
+    <h1>Gestión de <span style="text-decoration: underline;">Votantes</span></h1>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-label">Total Votantes</div>
+        <div class="stat-number">{{ total_usuarios }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Han Votado</div>
+        <div class="stat-number">{{ usuarios_votaron }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Voto Pendiente</div>
+        <div class="stat-number">{{ usuarios_no_votaron }}</div>
+    </div>
+</div>
+
+<div class="filter-card">
+    <form method="GET" class="filters">
+        <div class="filter-group">
+            <label>Filtrar por Voto</label>
+            <select name="voto" onchange="this.form.submit()">
+                <option value="todos" {% if filtro_voto == 'todos' %}selected{% endif %}>Todos</option>
+                <option value="votaron" {% if filtro_voto == 'votaron' %}selected{% endif %}>Votaron</option>
+                <option value="no_votaron" {% if filtro_voto == 'no_votaron' %}selected{% endif %}>No Votaron</option>
+            </select>
+        </div>
+        <div class="filter-group" style="flex-grow: 2;">
+            <label>Buscar por Nombre o Email</label>
+            <input type="text" name="buscar" placeholder="Escriba aquí..." value="{{ busqueda }}">
+        </div>
+        <div class="filter-buttons">
+            <button type="submit" class="btn-primary">🔍 Filtrar</button>
+            <a href="{{ url_for('admin.usuarios') }}" class="btn-secondary">Limpiar</a>
+        </div>
+    </form>
+</div>
+
+<div class="table-card">
+    <table class="usuarios-table">
+        <thead>
+            <tr>
+                <th>Votante</th>
+                <th>Email</th>
+                <th>Estado Voto</th>
+                <th>Fecha Registro</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% if not usuarios %}
+                <tr><td colspan="4" style="text-align: center; padding: 40px;">No se encontraron usuarios.</td></tr>
+            {% else %}
+                {% for usuario in usuarios %}
+                <tr>
+                    <td>
+                        <div class="user-cell">
+                            <div class="user-avatar">{{ usuario.nombre[0]|upper }}{{ usuario.apellido[0]|upper }}</div>
+                            <div class="user-name">{{ usuario.nombre }} {{ usuario.apellido }}</div>
+                        </div>
+                    </td>
+                    <td><div class="user-email">{{ usuario.email }}</div></td>
+                    <td>
+                        <span class="status-badge {% if usuario.ha_votado %}status-voto{% else %}status-no-voto{% endif %}">
+                            {% if usuario.ha_votado %}Votó{% else %}Pendiente{% endif %}
+                        </span>
+                    </td>
+                    <td>{{ usuario.fecha_registro.strftime('%d/%m/%Y') }}</td>
+                </tr>
+                {% endfor %}
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

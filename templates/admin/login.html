@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block title %}Admin - Sistema de Votación{% endblock %}
+
+{% block content %}
+<style>
+    .form-container { width: 100%; max-width: 400px; margin: 50px auto; text-align: center; }
+    .form-header h1 { color: #000; font-size: 2.5rem; font-weight: 500; margin-bottom: 25px; }
+    .security-notice { background: #f0f4ff; border: 1px solid #d9e2ff; border-radius: 8px; padding: 1rem; margin-bottom: 25px; font-size: 0.9rem; color: #3f51b5; text-align: left; }
+</style>
+
+<div class="form-container">
+    <div class="form-header">
+        <h1>⚙️ Admin-San</h1>
+    </div>
+
+    <div class="security-notice">
+        <strong>Área Restringida:</strong> Solo para personal autorizado.
+    </div>
+    
+    <form method="POST">
+        {{ form.hidden_tag() }}
+        
+        <div class="form-group">
+            {{ form.usuario.label }}
+            {{ form.usuario(placeholder="Tu usuario") }}
+        </div>
+        
+        <div class="form-group">
+            {{ form.password.label }}
+            {{ form.password(placeholder="••••••••") }}
+        </div>
+        
+        <button type="submit" class="btn-primary">Iniciar Sesión</button>
+    </form>
+    
+    <div class="bottom-link" style="margin-top: 20px;">
+        <a href="{{ url_for('index') }}">← Volver al sitio público</a>
+    </div>
+</div>
+{% endblock %}
