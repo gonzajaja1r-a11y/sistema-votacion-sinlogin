@@ -21,9 +21,8 @@
     .usuarios-table th, .usuarios-table td { padding: 16px; text-align: left; border-bottom: 1px solid #e5e7eb; white-space: nowrap; }
     .usuarios-table th { font-weight: 600; font-size: 0.9rem; color: #6b7280; text-transform: uppercase; }
     .user-cell { display: flex; align-items: center; gap: 15px; }
-    .user-avatar { width: 40px; height: 40px; border-radius: 50%; background-color: #e5e7eb; color: #4C46C7; display: flex; align-items: center; justify-content: center; font-weight: 600; }
-    .user-name { font-weight: 600; }
-    .user-email { font-size: 0.9rem; color: #6b7280; }
+    .user-avatar { width: 40px; height: 40px; border-radius: 50%; background-color: #e5e7eb; color: #4C46C7; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; }
+    .user-email { font-weight: 600; color: #111827; }
     .status-badge { padding: 5px 12px; border-radius: 50px; font-size: 0.8rem; font-weight: 600; }
     .status-voto { background: #dcfce7; color: #166534; }
     .status-no-voto { background: #fef9c3; color: #854d0e; }
@@ -60,7 +59,7 @@
             </select>
         </div>
         <div class="filter-group" style="flex-grow: 2;">
-            <label>Buscar por Nombre o Email</label>
+            <label>Buscar por Email</label>
             <input type="text" name="buscar" placeholder="Escriba aquí..." value="{{ busqueda }}">
         </div>
         <div class="filter-buttons">
@@ -75,30 +74,28 @@
         <thead>
             <tr>
                 <th>Votante</th>
-                <th>Email</th>
                 <th>Estado Voto</th>
                 <th>Fecha Registro</th>
             </tr>
         </thead>
         <tbody>
             {% if not usuarios %}
-                <tr><td colspan="4" style="text-align: center; padding: 40px;">No se encontraron usuarios.</td></tr>
+                <tr><td colspan="3" style="text-align: center; padding: 40px;">No se encontraron usuarios.</td></tr>
             {% else %}
                 {% for usuario in usuarios %}
                 <tr>
                     <td>
                         <div class="user-cell">
-                            <div class="user-avatar">{{ usuario.nombre[0]|upper }}{{ usuario.apellido[0]|upper }}</div>
-                            <div class="user-name">{{ usuario.nombre }} {{ usuario.apellido }}</div>
+                            <div class="user-avatar">👤</div>
+                            <div class="user-email">{{ usuario.email }}</div>
                         </div>
                     </td>
-                    <td><div class="user-email">{{ usuario.email }}</div></td>
                     <td>
                         <span class="status-badge {% if usuario.ha_votado %}status-voto{% else %}status-no-voto{% endif %}">
                             {% if usuario.ha_votado %}Votó{% else %}Pendiente{% endif %}
                         </span>
                     </td>
-                    <td>{{ usuario.fecha_registro.strftime('%d/%m/%Y') }}</td>
+                    <td>{{ usuario.fecha_registro.strftime('%d/%m/%Y %H:%M') }}</td>
                 </tr>
                 {% endfor %}
             {% endif %}

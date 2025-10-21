@@ -2,7 +2,7 @@ from flask import Flask, render_template, redirect, url_for, flash, request, ses
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from config import Config
 from models import db, Usuario, Administrador, Candidato, Voto
-from forms import LoginForm, RegistroForm, AdminLoginForm, CandidatoForm
+from forms import LoginForm, AdminLoginForm, CandidatoForm
 from datetime import datetime
 import os
 
@@ -64,41 +64,30 @@ def login():
     
     form = LoginForm()
     if form.validate_on_submit():
-        user = Usuario.query.filter_by(email=form.email.data).first()
-        if user and user.check_password(form.password.data):
-            # Limpiar cualquier sesión de admin previa
-            session.pop('user_type', None)
-            login_user(user, remember=True)
-            session['user_type'] = 'usuario'
-            return redirect(url_for('vote'))
-        flash('Email o contraseña incorrectos', 'error')
-    
-    return redirect(url_for('index'))
-
-@app.route('/register', methods=['GET', 'POST'])
-def register():
-    if current_user.is_authenticated:
+        email = form.email.data
+        
+        # Buscar usuario por email
+        user = Usuario.query.filter_by(email=email).first()
+        
+        # Si no existe, crear nuevo usuario automáticamente
+        if not user:
+            user = Usuario(email=email)
+            try:
+                db.session.add(user)
+                db.session.commit()
+                flash('¡Bienvenido! Tu cuenta ha sido creada.', 'success')
+            except Exception as e:
+                db.session.rollback()
+                flash('Error al crear la cuenta. Intenta nuevamente.', 'error')
+                return redirect(url_for('index'))
+        
+        # Limpiar cualquier sesión de admin previa
+        session.pop('user_type', None)
+        login_user(user, remember=True)
+        session['user_type'] = 'usuario'
         return redirect(url_for('vote'))
     
-    form = RegistroForm()
-    if form.validate_on_submit():
-        user = Usuario(
-            nombre=form.nombre.data,
-            apellido=form.apellido.data,
-            email=form.email.data
-        )
-        user.set_password(form.password.data)
-        
-        try:
-            db.session.add(user)
-            db.session.commit()
-            flash('¡Registro exitoso! Tu cuenta ha sido creada correctamente. Ya puedes iniciar sesión.', 'success')
-            return redirect(url_for('index'))
-        except Exception as e:
-            db.session.rollback()
-            flash('Error al registrar el usuario. Por favor intenta de nuevo.', 'error')
-    
-    return render_template('register.html', form=form)
+    return redirect(url_for('index'))
 
 @app.route('/vote', methods=['GET', 'POST'])
 @login_required
@@ -269,13 +258,7 @@ def usuarios():
         query = query.filter(Usuario.ha_votado == False)
     
     if busqueda:
-        query = query.filter(
-            db.or_(
-                Usuario.nombre.contains(busqueda),
-                Usuario.apellido.contains(busqueda),
-                Usuario.email.contains(busqueda)
-            )
-        )
+        query = query.filter(Usuario.email.contains(busqueda))
     
     usuarios = query.order_by(Usuario.fecha_registro.desc()).all()
     
@@ -311,8 +294,27 @@ def create_admin():
         db.session.commit()
         print("✓ Administrador creado - Usuario: admin, Contraseña: admin123")
 
+def create_database():
+    """Crear la base de datos si no existe"""
+    import pymysql
+    try:
+        connection = pymysql.connect(
+            host='localhost',
+            user='root',
+            password='',
+            charset='utf8mb4'
+        )
+        cursor = connection.cursor()
+        cursor.execute("CREATE DATABASE IF NOT EXISTS sistema_votacion")
+        print("✓ Base de datos 'sistema_votacion' verificada/creada")
+        cursor.close()
+        connection.close()
+    except Exception as e:
+        print(f"Error al crear la base de datos: {e}")
+
 def init_db():
     """Inicializar la base de datos"""
+    create_database()
     with app.app_context():
         print("Creando tablas en MySQL...")
         db.create_all()

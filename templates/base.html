@@ -42,8 +42,10 @@
                 <a href="{{ url_for('admin.dashboard') }}">📊 Dashboard</a>
                 <a href="{{ url_for('admin.candidatos') }}">📄 Candidatos</a>
                 <a href="{{ url_for('admin.usuarios') }}">👥 Votantes</a>
+                <span>👋 Bienvenido, {{ current_user.nombre }}</span>
+            {% else %}
+                <span>👋 {{ current_user.email }}</span>
             {% endif %}
-            <span>👋 Bienvenido, {{ current_user.nombre }}</span>
             <a href="{{ url_for('logout') }}">Cerrar Sesión</a>
         </div>
         {% endif %}

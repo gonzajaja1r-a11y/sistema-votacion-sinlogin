@@ -1,0 +1,1 @@
+tener base de datos sistema_votacion

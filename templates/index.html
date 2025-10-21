@@ -5,17 +5,24 @@
 {% block content %}
 <style>
     .form-container { width: 100%; max-width: 400px; margin: 50px auto; text-align: center; }
-    .form-header h1 { color: #000; font-size: 2.5rem; font-weight: 500; margin-bottom: 40px; }
+    .form-header h1 { color: #000; font-size: 2.5rem; font-weight: 500; margin-bottom: 20px; }
+    .form-header p { color: #666; font-size: 1rem; margin-bottom: 40px; }
     .bottom-link { text-align: center; margin-top: 20px; }
     .bottom-link a { color: #555; text-decoration: none; font-size: 15px; font-weight: 500; }
     .bottom-link a:hover { color: #4C46C7; }
     .admin-link { margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0; }
     .admin-link a { color: #666; font-size: 13px; }
+    .info-box { background: #f0f4ff; border: 1px solid #d9e2ff; border-radius: 8px; padding: 1rem; margin-bottom: 25px; font-size: 0.9rem; color: #3f51b5; text-align: left; }
 </style>
 
 <div class="form-container">
     <div class="form-header">
         <h1>🗳️ Sistema de Votación</h1>
+        <p>Ingresa con tu email institucional</p>
+    </div>
+    
+    <div class="info-box">
+        📧 <strong>Importante:</strong> Debes usar tu email institucional que termine en <strong>@itel.edu.ar</strong>
     </div>
     
     <form method="POST" action="{{ url_for('login') }}">
@@ -23,7 +30,7 @@
         
         <div class="form-group">
             {{ form.email.label }}
-            {{ form.email(placeholder="Tu correo electrónico") }}
+            {{ form.email(placeholder="tunombre@itel.edu.ar") }}
             {% if form.email.errors %}
                 <div style="color: #dc2626; font-size: 14px; margin-top: 5px;">
                     {% for error in form.email.errors %}{{ error }}{% endfor %}
@@ -31,22 +38,8 @@
             {% endif %}
         </div>
         
-        <div class="form-group">
-            {{ form.password.label }}
-            {{ form.password(placeholder="Tu contraseña") }}
-            {% if form.password.errors %}
-                <div style="color: #dc2626; font-size: 14px; margin-top: 5px;">
-                    {% for error in form.password.errors %}{{ error }}{% endfor %}
-                </div>
-            {% endif %}
-        </div>
-        
         <button type="submit" class="btn-primary">Iniciar Sesión</button>
     </form>
-    
-    <div class="bottom-link">
-        <a href="{{ url_for('register') }}">¿No tienes una cuenta? Regístrate aquí</a>
-    </div>
     
     <div class="bottom-link admin-link">
         <small>¿Eres administrador?</small><br>
