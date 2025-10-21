@@ -8,20 +8,101 @@
     .logo-main { width: 40px; height: 40px; background-color: #4C46C7; border-radius: 50%; }
     .page-header h1 { color: #4C46C7; font-size: 2rem; font-weight: 600; }
     .candidates-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 50px; margin-bottom: 50px; }
-    .candidate-item { text-align: center; cursor: pointer; padding: 20px; border-radius: 12px; transition: background-color 0.3s ease; border: 2px solid transparent; }
-    .candidate-item:hover { background-color: #f8f8ff; }
+    .candidate-item { text-align: center; cursor: pointer; padding: 20px; border-radius: 12px; transition: all 0.3s ease; border: 2px solid transparent; }
+    .candidate-item:hover { background-color: #f8f8ff; transform: translateY(-5px); }
     .candidate-item.selected { background-color: #f0f0ff; border-color: #4C46C7; }
     .candidate-icon { font-size: 4rem; margin-bottom: 15px; }
     .candidate-name { font-size: 1.5rem; font-weight: 600; color: #333; margin-bottom: 8px; }
-    .candidate-party { color: #666; font-size: 1rem; }
-    .vote-submission { text-align: center; }
+    .candidate-party { color: #666; font-size: 1rem; margin-bottom: 15px; }
+    .candidate-description { color: #999; font-size: 0.9rem; margin-bottom: 10px; }
+    .vote-submission { text-align: center; margin-top: 50px; }
     .voted-message { text-align: center; padding: 60px 20px; }
     .voted-message .icon { font-size: 5rem; color: #22c55e; }
     .voted-message h2 { font-size: 2.5rem; color: #333; margin-top: 20px; margin-bottom: 15px; }
+    .voted-message p { font-size: 1.1rem; color: #666; margin-bottom: 20px; }
+    .btn-vote { padding: 14px 45px; background: #4C46C7; color: white; border: none; border-radius: 50px; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; }
+    .btn-vote:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(76, 70, 199, 0.3); }
+    .btn-vote:disabled { background: #ccc; cursor: not-allowed; }
+    .vote-info { background: #f0f4ff; border: 1px solid #d9e2ff; border-radius: 8px; padding: 1rem; margin-bottom: 25px; font-size: 0.9rem; color: #3f51b5; text-align: center; }
+    .selected-candidate { background: #e8f5e9; border: 2px solid #4caf50; padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: center; }
+    .selected-candidate p { color: #2e7d32; font-weight: 600; margin: 0; }
 </style>
 
 {% if current_user.ha_votado %}
-<div class="voted-message">
-    <div class="icon">✓</div>
-    <h2>¡Gracias por votar!</h2>
-    <p>Tu voto ha sido registrado correctamente y tu participación es muy importante. Ya no puedes volver a votar.</p>
+    <div class="voted-message">
+        <div class="icon">✓</div>
+        <h2>¡Gracias por votar!</h2>
+        <p>Tu voto ha sido registrado correctamente y tu participación es muy importante.</p>
+        <p style="color: #999; font-size: 1rem;">Ya no puedes volver a votar en esta elección.</p>
+        <a href="{{ url_for('logout') }}" class="btn-primary" style="margin-top: 20px;">Cerrar Sesión</a>
+    </div>
+{% else %}
+    <div class="page-header">
+        <div class="logo-main"></div>
+        <h1>Emite tu <span style="text-decoration: underline;">Voto</span></h1>
+    </div>
+
+    <div class="vote-info">
+        📌 Selecciona un candidato y confirma tu voto. Esta acción no se puede deshacer.
+    </div>
+
+    {% if candidatos %}
+        <form method="POST" id="voteForm">
+            <div class="candidates-grid">
+                {% for candidato in candidatos %}
+                <div class="candidate-item" data-id="{{ candidato.id }}" data-name="{{ candidato.nombre }} {{ candidato.apellido }}" onclick="selectCandidate(this)">
+                    <div class="candidate-icon">🗳️</div>
+                    <div class="candidate-name">{{ candidato.nombre }} {{ candidato.apellido }}</div>
+                    <div class="candidate-party">{{ candidato.partido }}</div>
+                    {% if candidato.descripcion %}
+                        <div class="candidate-description">{{ candidato.descripcion[:50] }}{% if candidato.descripcion|length > 50 %}...{% endif %}</div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+
+            <div id="selectedDiv" style="display: none;">
+                <div class="selected-candidate">
+                    <p>Candidato seleccionado: <span id="selectedName"></span></p>
+                </div>
+            </div>
+
+            <div class="vote-submission">
+                <button type="submit" class="btn-vote" id="submitBtn" disabled>Confirmar Voto</button>
+            </div>
+
+            <input type="hidden" id="candidato_id" name="candidato_id" value="">
+        </form>
+    {% else %}
+        <div style="text-align: center; padding: 40px;">
+            <p style="font-size: 1.1rem; color: #666;">No hay candidatos disponibles en este momento.</p>
+        </div>
+    {% endif %}
+
+    <script>
+        function selectCandidate(element) {
+            const id = element.getAttribute('data-id');
+            const name = element.getAttribute('data-name');
+            
+            // Remover selección anterior
+            document.querySelectorAll('.candidate-item').forEach(el => el.classList.remove('selected'));
+            
+            // Agregar selección al candidato clickeado
+            element.classList.add('selected');
+            
+            // Actualizar valores
+            document.getElementById('candidato_id').value = id;
+            document.getElementById('selectedName').textContent = name;
+            document.getElementById('selectedDiv').style.display = 'block';
+            document.getElementById('submitBtn').disabled = false;
+        }
+
+        // Confirmar antes de enviar
+        document.getElementById('voteForm').addEventListener('submit', function(e) {
+            if (!confirm('¿Estás seguro de que deseas votar por este candidato? Esta acción no se puede deshacer.')) {
+                e.preventDefault();
+            }
+        });
+    </script>
+{% endif %}
+{% endblock %}

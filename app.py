@@ -1,6 +1,3 @@
-# ================================
-# app.py - Aplicación Principal
-# ================================
 from flask import Flask, render_template, redirect, url_for, flash, request, session, jsonify
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from config import Config
@@ -21,12 +18,27 @@ login_manager.login_message = 'Por favor inicia sesión para acceder a esta pág
 
 @login_manager.user_loader
 def load_user(user_id):
-    # Primero intentar cargar como usuario regular
-    user = Usuario.query.get(int(user_id))
-    if user:
-        return user
-    # Si no existe, intentar como administrador
-    return Administrador.query.get(int(user_id))
+    """Cargar usuario basado en el tipo almacenado en sesión"""
+    try:
+        user_id = int(user_id)
+        # Verificar si es admin basado en la sesión
+        if session.get('user_type') == 'admin':
+            admin = Administrador.query.get(user_id)
+            if admin:
+                return admin
+        
+        # Si no es admin, cargar como usuario normal
+        user = Usuario.query.get(user_id)
+        if user:
+            return user
+            
+    except (ValueError, TypeError):
+        pass
+    return None
+
+def is_admin():
+    """Helper para verificar si el usuario actual es admin"""
+    return current_user.is_authenticated and isinstance(current_user, Administrador)
 
 # ================================
 # RUTAS PRINCIPALES
@@ -35,7 +47,7 @@ def load_user(user_id):
 @app.route('/')
 def index():
     if current_user.is_authenticated:
-        if isinstance(current_user, Administrador):
+        if is_admin():
             return redirect(url_for('admin.dashboard'))
         else:
             return redirect(url_for('vote'))
@@ -46,17 +58,22 @@ def index():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if current_user.is_authenticated:
+        if is_admin():
+            return redirect(url_for('admin.dashboard'))
         return redirect(url_for('vote'))
     
     form = LoginForm()
     if form.validate_on_submit():
         user = Usuario.query.filter_by(email=form.email.data).first()
         if user and user.check_password(form.password.data):
-            login_user(user)
+            # Limpiar cualquier sesión de admin previa
+            session.pop('user_type', None)
+            login_user(user, remember=True)
+            session['user_type'] = 'usuario'
             return redirect(url_for('vote'))
         flash('Email o contraseña incorrectos', 'error')
     
-    return render_template('login.html', form=form)
+    return redirect(url_for('index'))
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -75,18 +92,19 @@ def register():
         try:
             db.session.add(user)
             db.session.commit()
-            flash('Registro exitoso. Ya puedes iniciar sesión.', 'success')
-            return redirect(url_for('login'))
+            flash('¡Registro exitoso! Tu cuenta ha sido creada correctamente. Ya puedes iniciar sesión.', 'success')
+            return redirect(url_for('index'))
         except Exception as e:
             db.session.rollback()
-            flash('Error al registrar el usuario.', 'error')
+            flash('Error al registrar el usuario. Por favor intenta de nuevo.', 'error')
     
     return render_template('register.html', form=form)
 
 @app.route('/vote', methods=['GET', 'POST'])
 @login_required
 def vote():
-    if isinstance(current_user, Administrador):
+    # Verificar que no sea admin
+    if is_admin():
         return redirect(url_for('admin.dashboard'))
     
     if request.method == 'POST' and not current_user.ha_votado:
@@ -117,6 +135,8 @@ def vote():
 @app.route('/logout')
 @login_required
 def logout():
+    # Limpiar completamente la sesión
+    session.clear()
     logout_user()
     return redirect(url_for('index'))
 
@@ -129,14 +149,23 @@ admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
 
 @admin_bp.route('/login', methods=['GET', 'POST'])
 def login():
-    if current_user.is_authenticated and isinstance(current_user, Administrador):
+    if current_user.is_authenticated and is_admin():
         return redirect(url_for('admin.dashboard'))
+    
+    # Si hay un usuario común logueado, hacer logout primero
+    if current_user.is_authenticated:
+        logout_user()
+        session.clear()
     
     form = AdminLoginForm()
     if form.validate_on_submit():
         admin = Administrador.query.filter_by(usuario=form.usuario.data).first()
         if admin and admin.check_password(form.password.data):
-            login_user(admin)
+            # Limpiar sesión y establecer tipo admin
+            session.clear()
+            login_user(admin, remember=True)
+            session['user_type'] = 'admin'
+            session.permanent = True
             return redirect(url_for('admin.dashboard'))
         flash('Usuario o contraseña incorrectos', 'error')
     
@@ -145,7 +174,8 @@ def login():
 @admin_bp.route('/dashboard')
 @login_required
 def dashboard():
-    if not isinstance(current_user, Administrador):
+    if not is_admin():
+        flash('Acceso no autorizado', 'error')
         return redirect(url_for('login'))
     
     # Estadísticas
@@ -171,7 +201,8 @@ def dashboard():
 @admin_bp.route('/candidatos', methods=['GET', 'POST'])
 @login_required
 def candidatos():
-    if not isinstance(current_user, Administrador):
+    if not is_admin():
+        flash('Acceso no autorizado', 'error')
         return redirect(url_for('login'))
     
     form = CandidatoForm()
@@ -222,7 +253,8 @@ def candidatos():
 @admin_bp.route('/usuarios')
 @login_required
 def usuarios():
-    if not isinstance(current_user, Administrador):
+    if not is_admin():
+        flash('Acceso no autorizado', 'error')
         return redirect(url_for('login'))
     
     # Filtros
@@ -277,12 +309,18 @@ def create_admin():
         admin.set_password('admin123')
         db.session.add(admin)
         db.session.commit()
-        print("Administrador creado - Usuario: admin, Contraseña: admin123")
+        print("✓ Administrador creado - Usuario: admin, Contraseña: admin123")
 
-@app.before_request
-def create_tables():
-    if not app._got_first_request:
+def init_db():
+    """Inicializar la base de datos"""
+    with app.app_context():
+        print("Creando tablas en MySQL...")
         db.create_all()
+        print("✓ Tablas creadas correctamente")
         create_admin()
+        print("✓ Base de datos inicializada")
+
 if __name__ == '__main__':
+    # Crear tablas e inicializar la BD
+    init_db()
     app.run(debug=True)
