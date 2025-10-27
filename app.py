@@ -206,6 +206,57 @@ def votar_publico():
 def gracias():
     """Página de agradecimiento después de votar"""
     return render_template('gracias.html')
+@app.route('/vista-proyector')
+def vista_proyector():
+    """Vista en vivo para proyector - Acceso público"""
+    return render_template('vista_proyector.html')
+
+@app.route('/api/resultados-live')
+def resultados_live():
+    """API para obtener resultados en tiempo real"""
+    try:
+        # Total proyectos activos
+        total_proyectos = Proyecto.query.filter_by(activo=True).count()
+        
+        # Total votos
+        total_votos = Voto.query.count()
+        
+        # Proyectos con votos ordenados
+        proyectos_raw = db.session.query(
+            Proyecto.id, 
+            Proyecto.nombre_proyecto, 
+            Proyecto.curso,
+            Proyecto.materia,
+            Proyecto.categoria,
+            db.func.count(Voto.id).label('votos')
+        ).outerjoin(Voto).group_by(Proyecto.id).filter(
+            Proyecto.activo==True
+        ).order_by(db.func.count(Voto.id).desc()).all()
+        
+        proyectos = []
+        for p in proyectos_raw:
+            proyectos.append({
+                'id': p[0],
+                'nombre_proyecto': p[1],
+                'curso': p[2],
+                'materia': p[3],
+                'categoria': p[4],
+                'votos': p[5]
+            })
+        
+        return jsonify({
+            'total_proyectos': total_proyectos,
+            'total_votos': total_votos,
+            'proyectos': proyectos
+        })
+        
+    except Exception as e:
+        print(f"❌ Error en resultados-live: {e}")
+        return jsonify({
+            'total_proyectos': 0,
+            'total_votos': 0,
+            'proyectos': []
+        }), 500
 
 # ================================
 # RUTAS DE ADMINISTRADOR

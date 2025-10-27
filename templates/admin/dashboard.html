@@ -33,7 +33,7 @@
     .dashboard-body { display: grid; grid-template-columns: 2fr 1fr; gap: 30px; align-items: flex-start; margin-bottom: 60px; }
     .content-card { background: white; padding: 30px; border: 1px solid #e5e7eb; border-radius: 12px; margin-bottom: 30px; }
     .content-title { font-size: 1.3rem; font-weight: 600; margin-bottom: 25px; }
-    .navigation-panel a { display: flex; align-items: center; gap: 15px; padding: 20px; margin-bottom: 15px; border-radius: 12px; background-color: #4C46C7; color: white; text-decoration: none; font-size: 1.2rem; font-weight: 600; }
+    .navigation-panel a { display: flex; align-items: center; gap: 15px; padding: 20px; margin-bottom: 15px; border-radius: 12px; background-color: #4C46C7; color: white; text-decoration: none; font-size: 1.2rem; font-weight: 600; transition: all 0.3s ease; }
     .navigation-panel a:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(76, 70, 199, 0.3); }
     .results-table table { width: 100%; border-collapse: collapse; }
     .results-table th, .results-table td { padding: 15px 10px; text-align: left; border-bottom: 1px solid #e5e7eb; }
@@ -71,6 +71,7 @@
 <!-- Logo ITEL -->
 <div class="logo-header">
     <img src="{{ url_for('static', filename='img/logo-itel.png') }}" alt="ITEL Logo">
+    <span class="school-name">ITEL</span>
 </div>
 
 <div class="page-header">
@@ -157,6 +158,10 @@
                 <span>👁️</span>
                 <span>Ver Votación Pública</span>
             </a>
+            <a href="{{ url_for('vista_proyector') }}" target="_blank" style="background-color: #22c55e;">
+                <span>📺</span>
+                <span>Vista en Vivo (Proyector)</span>
+            </a>
             <a href="{{ url_for('admin.logout') }}" style="background-color: #dc2626;">
                 <span>🚪</span>
                 <span>Cerrar Sesión</span>
@@ -175,7 +180,7 @@
 <script>
 const ctx1 = document.getElementById('resultadosChart');
 if (ctx1) {
-    const resultadosChart = new Chart(ctx1.getContext('2d'), {
+    new Chart(ctx1.getContext('2d'), {
         type: 'bar',
         data: {
             labels: [
