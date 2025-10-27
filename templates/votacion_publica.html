@@ -19,6 +19,24 @@
             border-radius: 20px;
             padding: 40px;
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            position: relative;
+            padding-bottom: 80px;
+        }
+        .logo-header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .logo-header img {
+            height: 80px;
+            width: auto;
+        }
+        .logo-header .school-name {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #667eea;
         }
         .header { 
             text-align: center; 
@@ -268,10 +286,30 @@
             color: #666;
             font-size: 0.95rem;
         }
+        .footer {
+            position: absolute;
+            bottom: 15px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            padding: 15px;
+            color: #999;
+            font-size: 0.85rem;
+            border-top: 1px solid #f0f0f0;
+        }
+        .footer a {
+            color: #667eea;
+            text-decoration: none;
+        }
     </style>
 </head>
 <body>
     <div class="container">
+        <!-- Logo ITEL -->
+        <div class="logo-header">
+            <img src="{{ url_for('static', filename='img/logo-itel.png') }}" alt="ITEL Logo">
+        </div>
+
         <!-- Verificando estado inicial -->
         <div id="verifying" class="verifying">
             <p>⏳ Verificando...</p>
@@ -382,6 +420,11 @@
                 <a href="/votacion-publica" class="btn-home" style="margin-top: 20px;">Ver todos los proyectos</a>
             </div>
             {% endif %}
+        </div>
+
+        <!-- Footer con créditos -->
+        <div class="footer">
+            Desarrollado por <a href="#">Cristian Gonzalo Segovia</a> - 5°U - ITEL 2025
         </div>
     </div>
 

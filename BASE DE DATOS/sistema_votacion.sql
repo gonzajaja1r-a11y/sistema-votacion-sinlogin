@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 27-10-2025 a las 21:21:34
+-- Tiempo de generación: 27-10-2025 a las 21:48:12
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
 
@@ -40,7 +40,7 @@ CREATE TABLE `administradores` (
 --
 
 INSERT INTO `administradores` (`id`, `usuario`, `nombre`, `password_hash`, `fecha_creacion`) VALUES
-(1, 'admin', 'Administrador', 'pbkdf2:sha256:600000$oKwCgc1ZqIfkngwT$1344850111ec4f6572a347426c9237476d344ceae896ac4c1de1c20f224ffbc9', '2025-10-27 19:09:55');
+(2, 'admin', 'Administrador', 'pbkdf2:sha256:600000$tpHyXiQMk3UUjiez$bd6972e7dcf5eed5fc753703af74558c62b2a39bd6fbb6502450ba47e9862106', '2025-10-27 20:44:03');
 
 -- --------------------------------------------------------
 
@@ -149,7 +149,7 @@ INSERT INTO `proyectos` (`id`, `nombre_proyecto`, `curso`, `ciclo`, `materia`, `
 
 CREATE TABLE `votos` (
   `id` int(11) NOT NULL,
-  `candidato_id` int(11) NOT NULL,
+  `proyecto_id` int(11) NOT NULL,
   `fecha_voto` datetime DEFAULT NULL,
   `ip_address` varchar(45) NOT NULL,
   `user_agent` text NOT NULL,
@@ -191,7 +191,7 @@ ALTER TABLE `proyectos`
 ALTER TABLE `votos`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `ix_votos_hash_voto` (`hash_voto`),
-  ADD KEY `candidato_id` (`candidato_id`);
+  ADD KEY `votos_ibfk_1` (`proyecto_id`);
 
 --
 -- AUTO_INCREMENT de las tablas volcadas
@@ -201,7 +201,7 @@ ALTER TABLE `votos`
 -- AUTO_INCREMENT de la tabla `administradores`
 --
 ALTER TABLE `administradores`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT de la tabla `candidatos`
@@ -229,7 +229,7 @@ ALTER TABLE `votos`
 -- Filtros para la tabla `votos`
 --
 ALTER TABLE `votos`
-  ADD CONSTRAINT `votos_ibfk_1` FOREIGN KEY (`candidato_id`) REFERENCES `candidatos` (`id`);
+  ADD CONSTRAINT `votos_ibfk_1` FOREIGN KEY (`proyecto_id`) REFERENCES `proyectos` (`id`);
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

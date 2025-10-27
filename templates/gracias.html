@@ -19,9 +19,26 @@
             max-width: 600px; 
             background: white;
             border-radius: 20px;
-            padding: 60px 40px;
+            padding: 60px 40px 80px;
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
             text-align: center;
+            position: relative;
+        }
+        .logo-header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        .logo-header img {
+            height: 60px;
+            width: auto;
+        }
+        .logo-header .school-name {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #667eea;
         }
         .success-icon { 
             font-size: 6rem; 
@@ -73,10 +90,30 @@
             transform: translateY(-2px); 
             box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
         }
+        .footer {
+            position: absolute;
+            bottom: 15px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            padding: 15px;
+            color: #999;
+            font-size: 0.85rem;
+        }
+        .footer a {
+            color: #667eea;
+            text-decoration: none;
+        }
     </style>
 </head>
 <body>
     <div class="container">
+        <!-- Logo ITEL -->
+        <div class="logo-header">
+            <img src="{{ url_for('static', filename='img/logo-itel.png') }}" alt="ITEL Logo">
+            <span class="school-name">ITEL</span>
+        </div>
+
         <div class="success-icon">✓</div>
         <h1>¡Gracias por Votar!</h1>
         <p class="message">
@@ -87,6 +124,11 @@
             <p>🔒 Tu voto fue registrado de forma segura y anónima</p>
         </div>
         <a href="/votacion-publica" class="btn-home">← Volver</a>
+
+        <!-- Footer con créditos -->
+        <div class="footer">
+            Desarrollado por <a href="#">Cristian Gonzalo Segovia</a> - 5°U - ITEL 2025
+        </div>
     </div>
 </body>
 </html>
