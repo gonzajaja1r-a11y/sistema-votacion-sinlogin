@@ -8,20 +8,6 @@ from datetime import datetime
 
 db = SQLAlchemy()
 
-class Usuario(UserMixin, db.Model):
-    __tablename__ = 'usuarios'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    email = db.Column(db.String(120), unique=True, nullable=False)
-    ha_votado = db.Column(db.Boolean, default=False)
-    fecha_registro = db.Column(db.DateTime, default=datetime.utcnow)
-    
-    # Relación con votos
-    votos = db.relationship('Voto', backref='votante', lazy='dynamic', cascade='all, delete-orphan')
-    
-    def __repr__(self):
-        return f'<Usuario {self.email}>'
-
 class Administrador(UserMixin, db.Model):
     __tablename__ = 'administradores'
     
@@ -66,10 +52,11 @@ class Voto(db.Model):
     __tablename__ = 'votos'
     
     id = db.Column(db.Integer, primary_key=True)
-    usuario_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=False)
     candidato_id = db.Column(db.Integer, db.ForeignKey('candidatos.id'), nullable=False)
     fecha_voto = db.Column(db.DateTime, default=datetime.utcnow)
-    ip_address = db.Column(db.String(45))
+    ip_address = db.Column(db.String(45), nullable=False)
+    user_agent = db.Column(db.Text, nullable=False)
+    hash_voto = db.Column(db.String(64), unique=True, nullable=False, index=True)
     
     def __repr__(self):
-        return f'<Voto {self.usuario_id} -> {self.candidato_id}>'
+        return f'<Voto {self.id} -> Candidato {self.candidato_id}>'

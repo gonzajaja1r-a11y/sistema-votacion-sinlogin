@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>¡Gracias por Votar!</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', sans-serif; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container { 
+            max-width: 600px; 
+            background: white;
+            border-radius: 20px;
+            padding: 60px 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            text-align: center;
+        }
+        .success-icon { 
+            font-size: 6rem; 
+            color: #4caf50;
+            margin-bottom: 30px;
+            animation: bounceIn 0.6s ease-out;
+        }
+        @keyframes bounceIn {
+            0% { transform: scale(0); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        h1 { 
+            font-size: 2.5rem; 
+            color: #333; 
+            margin-bottom: 20px;
+        }
+        .message { 
+            font-size: 1.2rem; 
+            color: #666; 
+            line-height: 1.8;
+            margin-bottom: 30px;
+        }
+        .info-box { 
+            background: #f0f4ff; 
+            border: 2px solid #667eea; 
+            border-radius: 12px; 
+            padding: 20px; 
+            margin-bottom: 30px;
+        }
+        .info-box p { 
+            color: #667eea; 
+            font-weight: 600;
+            margin: 0;
+        }
+        .btn-home { 
+            display: inline-block;
+            padding: 15px 40px; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+            color: white; 
+            text-decoration: none;
+            border-radius: 50px; 
+            font-size: 1.1rem; 
+            font-weight: 600; 
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+        .btn-home:hover { 
+            transform: translateY(-2px); 
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="success-icon">✓</div>
+        <h1>¡Gracias por Votar!</h1>
+        <p class="message">
+            Tu voto ha sido registrado correctamente.<br>
+            Tu participación es muy importante para nosotros.
+        </p>
+        <div class="info-box">
+            <p>🔒 Tu voto fue registrado de forma segura y anónima</p>
+        </div>
+        <a href="/votacion-publica" class="btn-home">← Volver</a>
+    </div>
+</body>
+</html>

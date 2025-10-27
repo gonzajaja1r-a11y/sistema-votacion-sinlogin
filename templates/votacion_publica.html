@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Votación - Feria de Proyectos</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', sans-serif; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container { 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        .header { 
+            text-align: center; 
+            margin-bottom: 50px; 
+        }
+        .header h1 { 
+            font-size: 2.5rem; 
+            color: #333; 
+            margin-bottom: 10px;
+        }
+        .header p { 
+            font-size: 1.1rem; 
+            color: #666; 
+        }
+        .info-box { 
+            background: #f0f4ff; 
+            border: 2px solid #667eea; 
+            border-radius: 12px; 
+            padding: 20px; 
+            margin-bottom: 40px; 
+            text-align: center;
+        }
+        .info-box p { 
+            color: #667eea; 
+            font-weight: 600; 
+            font-size: 1rem;
+        }
+        .candidates-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); 
+            gap: 30px; 
+            margin-bottom: 40px; 
+        }
+        .candidate-card { 
+            border: 3px solid #e0e0e0; 
+            border-radius: 15px; 
+            padding: 30px; 
+            text-align: center; 
+            cursor: pointer; 
+            transition: all 0.3s ease;
+            background: white;
+        }
+        .candidate-card:hover { 
+            transform: translateY(-5px); 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            border-color: #667eea;
+        }
+        .candidate-card.selected { 
+            border-color: #667eea; 
+            background: #f0f4ff;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+        }
+        .candidate-icon { 
+            font-size: 4rem; 
+            margin-bottom: 20px; 
+        }
+        .candidate-name { 
+            font-size: 1.5rem; 
+            font-weight: 700; 
+            color: #333; 
+            margin-bottom: 10px; 
+        }
+        .candidate-party { 
+            color: #667eea; 
+            font-size: 1rem; 
+            font-weight: 600;
+            margin-bottom: 15px; 
+        }
+        .candidate-description { 
+            color: #666; 
+            font-size: 0.9rem; 
+            line-height: 1.5;
+        }
+        .vote-section { 
+            text-align: center; 
+            margin-top: 40px;
+        }
+        .selected-info { 
+            background: #e8f5e9; 
+            border: 2px solid #4caf50; 
+            border-radius: 12px; 
+            padding: 20px; 
+            margin-bottom: 25px;
+            display: none;
+        }
+        .selected-info.show { 
+            display: block; 
+        }
+        .selected-info p { 
+            color: #2e7d32; 
+            font-weight: 600; 
+            font-size: 1.1rem;
+        }
+        .btn-vote { 
+            padding: 18px 60px; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+            color: white; 
+            border: none; 
+            border-radius: 50px; 
+            font-size: 1.2rem; 
+            font-weight: 700; 
+            cursor: pointer; 
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+        .btn-vote:hover:not(:disabled) { 
+            transform: translateY(-2px); 
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+        .btn-vote:disabled { 
+            background: #ccc; 
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+        .btn-home {
+            display: inline-block;
+            padding: 15px 40px; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+            color: white; 
+            text-decoration: none;
+            border-radius: 50px; 
+            font-size: 1.1rem; 
+            font-weight: 600; 
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            margin-top: 20px;
+        }
+        .btn-home:hover { 
+            transform: translateY(-2px); 
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+        .no-candidates { 
+            text-align: center; 
+            padding: 60px 20px; 
+            color: #666;
+        }
+        .loading { 
+            text-align: center; 
+            padding: 20px; 
+            display: none;
+        }
+        .loading.show { 
+            display: block; 
+        }
+        .loading p { 
+            color: #667eea; 
+            font-size: 1.1rem;
+        }
+        .voted-message {
+            text-align: center;
+            padding: 60px 20px;
+            display: none;
+        }
+        .voted-message.show {
+            display: block;
+        }
+        .voted-message .icon {
+            font-size: 5rem;
+            color: #22c55e;
+            margin-bottom: 20px;
+        }
+        .voted-message h2 {
+            font-size: 2.5rem;
+            color: #333;
+            margin-bottom: 15px;
+        }
+        .voted-message p {
+            font-size: 1.1rem;
+            color: #666;
+            margin-bottom: 20px;
+        }
+        #votingArea {
+            display: none;
+        }
+        #votingArea.show {
+            display: block;
+        }
+        .verifying {
+            text-align: center;
+            padding: 80px 20px;
+        }
+        .verifying p {
+            font-size: 1.2rem;
+            color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Verificando estado inicial -->
+        <div id="verifying" class="verifying">
+            <p>⏳ Verificando...</p>
+        </div>
+
+        <!-- Mensaje: Ya votaste -->
+        <div id="votedMessage" class="voted-message">
+            <div class="icon">✓</div>
+            <h2>¡Ya has votado!</h2>
+            <p>Tu voto fue registrado anteriormente.</p>
+            <p style="color: #999; font-size: 1rem;">Gracias por tu participación.</p>
+            <a href="/" class="btn-home">← Volver al inicio</a>
+        </div>
+
+        <!-- Área de votación -->
+        <div id="votingArea">
+            <div class="header">
+                <h1>🎓 Votación Feria de Proyectos</h1>
+                <p>Selecciona el proyecto que más te gustó</p>
+            </div>
+
+            <div class="info-box">
+                <p>📌 Selecciona un proyecto y confirma tu voto. Solo puedes votar una vez.</p>
+            </div>
+
+            {% if candidatos %}
+            <form id="voteForm">
+                <div class="candidates-grid" id="candidatesGrid">
+                    {% for candidato in candidatos %}
+                    <div class="candidate-card" 
+                         data-id="{{ candidato.id }}" 
+                         data-nombre="{{ candidato.nombre }} {{ candidato.apellido }}"
+                         onclick="seleccionarCandidato(this)">
+                        <div class="candidate-icon">🏆</div>
+                        <div class="candidate-name">{{ candidato.nombre }} {{ candidato.apellido }}</div>
+                        <div class="candidate-party">{{ candidato.partido }}</div>
+                        {% if candidato.descripcion %}
+                        <div class="candidate-description">
+                            {{ candidato.descripcion[:100] }}{% if candidato.descripcion|length > 100 %}...{% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <div class="vote-section">
+                    <div class="selected-info" id="selectedInfo">
+                        <p>✓ Proyecto seleccionado: <strong id="selectedName"></strong></p>
+                    </div>
+
+                    <div class="loading" id="loading">
+                        <p>⏳ Registrando tu voto...</p>
+                    </div>
+
+                    <button type="button" class="btn-vote" id="btnVote" disabled onclick="confirmarVoto()">
+                        Confirmar Voto
+                    </button>
+                </div>
+
+                <input type="hidden" id="candidatoId" name="candidato_id">
+            </form>
+            {% else %}
+            <div class="no-candidates">
+                <p style="font-size: 1.2rem;">😕 No hay proyectos disponibles en este momento.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <script>
+        let candidatoSeleccionado = null;
+
+        // Función para verificar si ya tiene cookie de votación
+        function tieneCookie() {
+            return document.cookie.split(';').some(cookie => {
+                return cookie.trim().startsWith('ya_vote=');
+            });
+        }
+
+        // Función para guardar cookie
+        function guardarCookie() {
+            document.cookie = 'ya_vote=si; max-age=86400; path=/; SameSite=Strict';
+        }
+
+        // Verificar estado al cargar la página
+        window.addEventListener('load', async function() {
+            // Primera verificación: Cookie
+            if (tieneCookie()) {
+                mostrarYaVoto();
+                return;
+            }
+
+            // Segunda verificación: Hash en servidor
+            try {
+                const response = await fetch('/verificar-voto', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        user_agent: navigator.userAgent
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.puede_votar) {
+                    // Puede votar, mostrar formulario
+                    mostrarFormulario();
+                } else {
+                    // Ya votó (hash lo detectó), guardar cookie y mostrar mensaje
+                    guardarCookie();
+                    mostrarYaVoto();
+                }
+            } catch (error) {
+                console.error('Error verificando voto:', error);
+                // En caso de error, permitir votar
+                mostrarFormulario();
+            }
+        });
+
+        function mostrarFormulario() {
+            document.getElementById('verifying').style.display = 'none';
+            document.getElementById('votedMessage').classList.remove('show');
+            document.getElementById('votingArea').classList.add('show');
+        }
+
+        function mostrarYaVoto() {
+            document.getElementById('verifying').style.display = 'none';
+            document.getElementById('votingArea').classList.remove('show');
+            document.getElementById('votedMessage').classList.add('show');
+        }
+
+        function seleccionarCandidato(element) {
+            const id = element.getAttribute('data-id');
+            const nombre = element.getAttribute('data-nombre');
+            
+            document.querySelectorAll('.candidate-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            
+            element.classList.add('selected');
+            candidatoSeleccionado = id;
+            
+            document.getElementById('candidatoId').value = id;
+            document.getElementById('selectedName').textContent = nombre;
+            document.getElementById('selectedInfo').classList.add('show');
+            document.getElementById('btnVote').disabled = false;
+        }
+
+        async function confirmarVoto() {
+            if (!candidatoSeleccionado) {
+                alert('Por favor selecciona un proyecto');
+                return;
+            }
+
+            if (!confirm('¿Estás seguro de votar por este proyecto? Esta acción no se puede deshacer.')) {
+                return;
+            }
+
+            document.getElementById('loading').classList.add('show');
+            document.getElementById('btnVote').disabled = true;
+
+            try {
+                const response = await fetch('/votar-publico', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        candidato_id: candidatoSeleccionado,
+                        user_agent: navigator.userAgent
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    guardarCookie();
+                    window.location.href = '/gracias';
+                } else {
+                    alert(data.mensaje || 'Error al registrar el voto');
+                    document.getElementById('loading').classList.remove('show');
+                    document.getElementById('btnVote').disabled = false;
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error de conexión. Por favor intenta nuevamente.');
+                document.getElementById('loading').classList.remove('show');
+                document.getElementById('btnVote').disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>

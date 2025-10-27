@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block title %}Lista de Votos - Admin{% endblock %}
+
+{% block content %}
+<style>
+    .page-header { display: flex; align-items: center; gap: 15px; margin-bottom: 30px; }
+    .logo-main { width: 40px; height: 40px; background-color: #4C46C7; border-radius: 50%; }
+    .page-header h1 { color: #4C46C7; font-size: 2rem; font-weight: 600; }
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 25px; margin-bottom: 30px; }
+    .stat-card { background: white; padding: 25px; border: 1px solid #e5e7eb; border-radius: 12px; }
+    .stat-label { font-size: 1rem; color: #666; font-weight: 500; margin-bottom: 8px; }
+    .stat-number { font-size: 2.5rem; font-weight: 700; color: #111827; }
+    .table-card { background: white; border: 1px solid #e5e7eb; border-radius: 12px; overflow-x: auto; }
+    .votos-table { width: 100%; border-collapse: collapse; }
+    .votos-table th, .votos-table td { padding: 16px; text-align: left; border-bottom: 1px solid #e5e7eb; }
+    .votos-table th { font-weight: 600; font-size: 0.9rem; color: #6b7280; text-transform: uppercase; }
+    .hash-cell { font-family: monospace; font-size: 0.85rem; color: #6b7280; }
+</style>
+
+<div class="page-header">
+    <div class="logo-main"></div>
+    <h1>Lista de <span style="text-decoration: underline;">Votos</span></h1>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-label">Total Votos Registrados</div>
+        <div class="stat-number">{{ total_votos }}</div>
+    </div>
+</div>
+
+<div class="table-card">
+    <table class="votos-table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Candidato Votado</th>
+                <th>Fecha y Hora</th>
+                <th>IP</th>
+                <th>Hash (últimos 12 dígitos)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% if not votos %}
+                <tr><td colspan="5" style="text-align: center; padding: 40px;">No hay votos registrados aún.</td></tr>
+            {% else %}
+                {% for voto_data in votos %}
+                {% set voto = voto_data[0] %}
+                {% set nombre = voto_data[1] %}
+                {% set apellido = voto_data[2] %}
+                <tr>
+                    <td><strong>#{{ voto.id }}</strong></td>
+                    <td>{{ nombre }} {{ apellido }}</td>
+                    <td>{{ voto.fecha_voto.strftime('%d/%m/%Y %H:%M:%S') }}</td>
+                    <td>{{ voto.ip_address }}</td>
+                    <td class="hash-cell">...{{ voto.hash_voto[-12:] }}</td>
+                </tr>
+                {% endfor %}
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
