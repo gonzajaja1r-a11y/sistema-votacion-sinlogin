@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+
+{% block title %}Gestión de Proyectos - Admin{% endblock %}
+
+{% block content %}
+<style>
+    .page-header { display: flex; align-items: center; gap: 15px; margin-bottom: 30px; }
+    .logo-main { width: 40px; height: 40px; background-color: #4C46C7; border-radius: 50%; }
+    .page-header h1 { color: #4C46C7; font-size: 2rem; font-weight: 600; }
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 25px; margin-bottom: 30px; }
+    .stat-card { background: white; padding: 25px; border: 1px solid #e5e7eb; border-radius: 12px; }
+    .stat-label { font-size: 1rem; color: #666; font-weight: 500; margin-bottom: 8px; }
+    .stat-number { font-size: 2.5rem; font-weight: 700; color: #111827; }
+    .content-grid { display: grid; grid-template-columns: 1fr 2fr; gap: 30px; align-items: flex-start; }
+    .content-card { background: white; padding: 30px; border: 1px solid #e5e7eb; border-radius: 12px; }
+    .content-card h2 { font-size: 1.3rem; font-weight: 600; margin-bottom: 25px; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .proyectos-table { width: 100%; border-collapse: collapse; }
+    .proyectos-table th, .proyectos-table td { padding: 16px; text-align: left; border-bottom: 1px solid #e5e7eb; }
+    .proyectos-table th { font-weight: 600; font-size: 0.9rem; color: #6b7280; text-transform: uppercase; }
+    .no-delete-text { font-size: 0.9rem; color: #9ca3af; }
+    .category-badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        background: #f0f4ff;
+        color: #4C46C7;
+    }
+</style>
+
+<div class="page-header">
+    <div class="logo-main"></div>
+    <h1>Gestión de <span style="text-decoration: underline;">Proyectos</span></h1>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-label">Total Proyectos</div>
+        <div class="stat-number">{{ proyectos|length }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Total Votos Emitidos</div>
+        <div class="stat-number">{{ proyectos|sum(attribute='1') }}</div>
+    </div>
+</div>
+
+<div class="content-grid">
+    <div class="content-card form-card">
+        <h2>➕ Agregar Nuevo Proyecto</h2>
+        <form method="POST">
+            {{ form.hidden_tag() }}
+            <input type="hidden" name="action" value="agregar">
+            
+            <div class="form-group">
+                {{ form.nombre_proyecto.label }}
+                {{ form.nombre_proyecto() }}
+                {% if form.nombre_proyecto.errors %}
+                    <div style="color: #dc2626; font-size: 14px; margin-top: 5px;">
+                        {% for error in form.nombre_proyecto.errors %}{{ error }}{% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    {{ form.curso.label }}
+                    {{ form.curso(placeholder="Ej: 5°U") }}
+                    {% if form.curso.errors %}
+                        <div style="color: #dc2626; font-size: 14px; margin-top: 5px;">
+                            {% for error in form.curso.errors %}{{ error }}{% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    {{ form.ciclo.label }}
+                    {{ form.ciclo() }}
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    {{ form.materia.label }}
+                    {{ form.materia(placeholder="Ej: Lab. Programación II") }}
+                    {% if form.materia.errors %}
+                        <div style="color: #dc2626; font-size: 14px; margin-top: 5px;">
+                            {% for error in form.materia.errors %}{{ error }}{% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    {{ form.categoria.label }}
+                    {{ form.categoria() }}
+                </div>
+            </div>
+            
+            <div class="form-group">
+                {{ form.integrantes.label }}
+                {{ form.integrantes(rows=3, placeholder="Pérez Juan, González María, ...") }}
+                {% if form.integrantes.errors %}
+                    <div style="color: #dc2626; font-size: 14px; margin-top: 5px;">
+                        {% for error in form.integrantes.errors %}{{ error }}{% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+            
+            <div class="form-group">
+                {{ form.descripcion.label }}
+                {{ form.descripcion(rows=3, placeholder="Descripción breve del proyecto...") }}
+            </div>
+            
+            <button type="submit" class="btn-primary">Agregar Proyecto</button>
+        </form>
+    </div>
+
+    <div class="content-card list-card">
+        <h2>📋 Lista de Proyectos</h2>
+        <table class="proyectos-table">
+            <thead>
+                <tr>
+                    <th>Proyecto</th>
+                    <th>Categoría</th>
+                    <th>Votos</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if not proyectos %}
+                    <tr><td colspan="4" style="text-align: center; padding: 40px;">Aún no hay proyectos registrados.</td></tr>
+                {% else %}
+                    {% for proyecto_data in proyectos %}
+                    {% set proyecto = proyecto_data[0] %}
+                    {% set total_votos = proyecto_data[1] %}
+                    <tr>
+                        <td>
+                            <strong>{{ proyecto.nombre_proyecto }}</strong><br>
+                            <small style="color:#6b7280;">{{ proyecto.curso }} - {{ proyecto.materia }}</small><br>
+                            <small style="color:#9ca3af;">{{ proyecto.integrantes[:50] }}{% if proyecto.integrantes|length > 50 %}...{% endif %}</small>
+                        </td>
+                        <td>
+                            {% if proyecto.categoria %}
+                            <span class="category-badge">{{ proyecto.categoria }}</span>
+                            {% endif %}
+                        </td>
+                        <td><strong style="font-size: 1.2rem;">{{ total_votos }}</strong></td>
+                        <td>
+                            {% if total_votos == 0 %}
+                                <form method="POST" style="display: inline;" onsubmit="return confirm('¿Estás seguro de eliminar este proyecto?')">
+                                    {{ form.hidden_tag() }}
+                                    <input type="hidden" name="action" value="eliminar">
+                                    <input type="hidden" name="proyecto_id" value="{{ proyecto.id }}">
+                                    <button type="submit" class="btn-danger">Eliminar</button>
+                                </form>
+                            {% else %}
+                                <span class="no-delete-text">No eliminable</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

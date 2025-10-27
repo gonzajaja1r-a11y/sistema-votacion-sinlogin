@@ -35,7 +35,8 @@
         <thead>
             <tr>
                 <th>ID</th>
-                <th>Candidato Votado</th>
+                <th>Proyecto Votado</th>
+                <th>Curso</th>
                 <th>Fecha y Hora</th>
                 <th>IP</th>
                 <th>Hash (últimos 12 dígitos)</th>
@@ -43,15 +44,16 @@
         </thead>
         <tbody>
             {% if not votos %}
-                <tr><td colspan="5" style="text-align: center; padding: 40px;">No hay votos registrados aún.</td></tr>
+                <tr><td colspan="6" style="text-align: center; padding: 40px;">No hay votos registrados aún.</td></tr>
             {% else %}
                 {% for voto_data in votos %}
                 {% set voto = voto_data[0] %}
-                {% set nombre = voto_data[1] %}
-                {% set apellido = voto_data[2] %}
+                {% set nombre_proyecto = voto_data[1] %}
+                {% set curso = voto_data[2] %}
                 <tr>
                     <td><strong>#{{ voto.id }}</strong></td>
-                    <td>{{ nombre }} {{ apellido }}</td>
+                    <td><strong>{{ nombre_proyecto }}</strong></td>
+                    <td>{{ curso }}</td>
                     <td>{{ voto.fecha_voto.strftime('%d/%m/%Y %H:%M:%S') }}</td>
                     <td>{{ voto.ip_address }}</td>
                     <td class="hash-cell">...{{ voto.hash_voto[-12:] }}</td>

@@ -13,7 +13,7 @@
             padding: 20px;
         }
         .container { 
-            max-width: 1200px; 
+            max-width: 1400px; 
             margin: 0 auto; 
             background: white;
             border-radius: 20px;
@@ -22,7 +22,7 @@
         }
         .header { 
             text-align: center; 
-            margin-bottom: 50px; 
+            margin-bottom: 40px; 
         }
         .header h1 { 
             font-size: 2.5rem; 
@@ -38,7 +38,7 @@
             border: 2px solid #667eea; 
             border-radius: 12px; 
             padding: 20px; 
-            margin-bottom: 40px; 
+            margin-bottom: 30px; 
             text-align: center;
         }
         .info-box p { 
@@ -46,51 +46,109 @@
             font-weight: 600; 
             font-size: 1rem;
         }
-        .candidates-grid { 
+        .filters {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .filter-group label {
+            font-size: 0.9rem;
+            color: #666;
+            font-weight: 600;
+        }
+        .filter-group select {
+            padding: 10px 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1rem;
+            background: white;
+            cursor: pointer;
+            min-width: 200px;
+        }
+        .filter-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .projects-grid { 
             display: grid; 
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); 
-            gap: 30px; 
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); 
+            gap: 25px; 
             margin-bottom: 40px; 
         }
-        .candidate-card { 
+        .project-card { 
             border: 3px solid #e0e0e0; 
             border-radius: 15px; 
-            padding: 30px; 
-            text-align: center; 
+            padding: 25px; 
             cursor: pointer; 
             transition: all 0.3s ease;
             background: white;
+            display: flex;
+            flex-direction: column;
         }
-        .candidate-card:hover { 
+        .project-card:hover { 
             transform: translateY(-5px); 
             box-shadow: 0 10px 30px rgba(0,0,0,0.15);
             border-color: #667eea;
         }
-        .candidate-card.selected { 
+        .project-card.selected { 
             border-color: #667eea; 
             background: #f0f4ff;
             box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
         }
-        .candidate-icon { 
-            font-size: 4rem; 
-            margin-bottom: 20px; 
+        .project-icon { 
+            font-size: 3rem; 
+            margin-bottom: 15px; 
+            text-align: center;
         }
-        .candidate-name { 
-            font-size: 1.5rem; 
+        .project-name { 
+            font-size: 1.3rem; 
             font-weight: 700; 
             color: #333; 
             margin-bottom: 10px; 
+            text-align: center;
         }
-        .candidate-party { 
+        .project-meta { 
+            text-align: center;
+            margin-bottom: 15px;
+        }
+        .project-course { 
             color: #667eea; 
             font-size: 1rem; 
             font-weight: 600;
-            margin-bottom: 15px; 
+            display: block;
         }
-        .candidate-description { 
-            color: #666; 
+        .project-subject { 
+            color: #999; 
             font-size: 0.9rem; 
+            display: block;
+            margin-top: 5px;
+        }
+        .project-category {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin: 10px auto;
+        }
+        .project-members { 
+            color: #666; 
+            font-size: 0.85rem; 
             line-height: 1.5;
+            margin-top: auto;
+            padding-top: 15px;
+            border-top: 1px solid #e0e0e0;
+            max-height: 80px;
+            overflow-y: auto;
         }
         .vote-section { 
             text-align: center; 
@@ -133,24 +191,7 @@
             cursor: not-allowed;
             box-shadow: none;
         }
-        .btn-home {
-            display: inline-block;
-            padding: 15px 40px; 
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
-            color: white; 
-            text-decoration: none;
-            border-radius: 50px; 
-            font-size: 1.1rem; 
-            font-weight: 600; 
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-            margin-top: 20px;
-        }
-        .btn-home:hover { 
-            transform: translateY(-2px); 
-            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
-        }
-        .no-candidates { 
+        .no-projects { 
             text-align: center; 
             padding: 60px 20px; 
             color: #666;
@@ -204,6 +245,29 @@
             font-size: 1.2rem;
             color: #667eea;
         }
+        .btn-home {
+            display: inline-block;
+            padding: 15px 40px; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+            color: white; 
+            text-decoration: none;
+            border-radius: 50px; 
+            font-size: 1.1rem; 
+            font-weight: 600; 
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            margin-top: 20px;
+        }
+        .btn-home:hover { 
+            transform: translateY(-2px); 
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+        .stats {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #666;
+            font-size: 0.95rem;
+        }
     </style>
 </head>
 <body>
@@ -218,37 +282,80 @@
             <div class="icon">✓</div>
             <h2>¡Ya has votado!</h2>
             <p>Tu voto fue registrado anteriormente.</p>
-            <p style="color: #999; font-size: 1rem;">Gracias por tu participación.</p>
+            <p style="color: #999; font-size: 1rem;">Gracias por tu participación en la Muestra Anual de Proyectos.</p>
             <a href="/" class="btn-home">← Volver al inicio</a>
         </div>
 
         <!-- Área de votación -->
         <div id="votingArea">
             <div class="header">
-                <h1>🎓 Votación Feria de Proyectos</h1>
-                <p>Selecciona el proyecto que más te gustó</p>
+                <h1>🎓 Muestra Anual de Proyectos 2025</h1>
+                <p>Vota por el proyecto que más te gustó</p>
             </div>
 
             <div class="info-box">
                 <p>📌 Selecciona un proyecto y confirma tu voto. Solo puedes votar una vez.</p>
             </div>
 
-            {% if candidatos %}
+            {% if proyectos %}
+            <!-- Filtros -->
+            <form method="GET" class="filters">
+                <div class="filter-group">
+                    <label>Categoría</label>
+                    <select name="categoria" onchange="this.form.submit()">
+                        <option value="todas" {% if categoria_filtro == 'todas' %}selected{% endif %}>Todas las categorías</option>
+                        {% for cat in categorias %}
+                        <option value="{{ cat }}" {% if categoria_filtro == cat %}selected{% endif %}>{{ cat }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Curso</label>
+                    <select name="curso" onchange="this.form.submit()">
+                        <option value="todos" {% if curso_filtro == 'todos' %}selected{% endif %}>Todos los cursos</option>
+                        {% for curso in cursos %}
+                        <option value="{{ curso }}" {% if curso_filtro == curso %}selected{% endif %}>{{ curso }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </form>
+
+            <div class="stats">
+                Mostrando {{ proyectos|length }} proyecto{% if proyectos|length != 1 %}s{% endif %}
+            </div>
+
             <form id="voteForm">
-                <div class="candidates-grid" id="candidatesGrid">
-                    {% for candidato in candidatos %}
-                    <div class="candidate-card" 
-                         data-id="{{ candidato.id }}" 
-                         data-nombre="{{ candidato.nombre }} {{ candidato.apellido }}"
-                         onclick="seleccionarCandidato(this)">
-                        <div class="candidate-icon">🏆</div>
-                        <div class="candidate-name">{{ candidato.nombre }} {{ candidato.apellido }}</div>
-                        <div class="candidate-party">{{ candidato.partido }}</div>
-                        {% if candidato.descripcion %}
-                        <div class="candidate-description">
-                            {{ candidato.descripcion[:100] }}{% if candidato.descripcion|length > 100 %}...{% endif %}
+                <div class="projects-grid" id="projectsGrid">
+                    {% for proyecto in proyectos %}
+                    <div class="project-card" 
+                         data-id="{{ proyecto.id }}" 
+                         data-nombre="{{ proyecto.nombre_proyecto }}"
+                         onclick="seleccionarProyecto(this)">
+                        <div class="project-icon">
+                            {% if proyecto.categoria == 'Robótica' %}🤖
+                            {% elif proyecto.categoria == 'Programación' %}💻
+                            {% elif proyecto.categoria == 'Hardware' %}🔧
+                            {% elif proyecto.categoria == 'Procedimientos Técnicos' %}🪵
+                            {% elif proyecto.categoria == 'Arte' %}🎨
+                            {% elif proyecto.categoria == 'Literatura' %}📚
+                            {% elif proyecto.categoria == 'Ciencias Sociales' %}🌍
+                            {% elif proyecto.categoria == 'Matemática' %}🧮
+                            {% elif proyecto.categoria == 'Catequesis' %}✝️
+                            {% else %}🏆
+                            {% endif %}
                         </div>
+                        <div class="project-name">{{ proyecto.nombre_proyecto }}</div>
+                        <div class="project-meta">
+                            <span class="project-course">{{ proyecto.curso }}</span>
+                            <span class="project-subject">{{ proyecto.materia }}</span>
+                        </div>
+                        {% if proyecto.categoria %}
+                        <div class="project-category">{{ proyecto.categoria }}</div>
                         {% endif %}
+                        <div class="project-members">
+                            <strong>Integrantes:</strong><br>
+                            {{ proyecto.integrantes }}
+                        </div>
                     </div>
                     {% endfor %}
                 </div>
@@ -267,40 +374,36 @@
                     </button>
                 </div>
 
-                <input type="hidden" id="candidatoId" name="candidato_id">
+                <input type="hidden" id="proyectoId" name="proyecto_id">
             </form>
             {% else %}
-            <div class="no-candidates">
-                <p style="font-size: 1.2rem;">😕 No hay proyectos disponibles en este momento.</p>
+            <div class="no-projects">
+                <p style="font-size: 1.2rem;">😕 No hay proyectos disponibles con los filtros seleccionados.</p>
+                <a href="/votacion-publica" class="btn-home" style="margin-top: 20px;">Ver todos los proyectos</a>
             </div>
             {% endif %}
         </div>
     </div>
 
     <script>
-        let candidatoSeleccionado = null;
+        let proyectoSeleccionado = null;
 
-        // Función para verificar si ya tiene cookie de votación
         function tieneCookie() {
             return document.cookie.split(';').some(cookie => {
                 return cookie.trim().startsWith('ya_vote=');
             });
         }
 
-        // Función para guardar cookie
         function guardarCookie() {
             document.cookie = 'ya_vote=si; max-age=86400; path=/; SameSite=Strict';
         }
 
-        // Verificar estado al cargar la página
         window.addEventListener('load', async function() {
-            // Primera verificación: Cookie
             if (tieneCookie()) {
                 mostrarYaVoto();
                 return;
             }
 
-            // Segunda verificación: Hash en servidor
             try {
                 const response = await fetch('/verificar-voto', {
                     method: 'POST',
@@ -315,16 +418,13 @@
                 const data = await response.json();
 
                 if (data.puede_votar) {
-                    // Puede votar, mostrar formulario
                     mostrarFormulario();
                 } else {
-                    // Ya votó (hash lo detectó), guardar cookie y mostrar mensaje
                     guardarCookie();
                     mostrarYaVoto();
                 }
             } catch (error) {
                 console.error('Error verificando voto:', error);
-                // En caso de error, permitir votar
                 mostrarFormulario();
             }
         });
@@ -341,25 +441,25 @@
             document.getElementById('votedMessage').classList.add('show');
         }
 
-        function seleccionarCandidato(element) {
+        function seleccionarProyecto(element) {
             const id = element.getAttribute('data-id');
             const nombre = element.getAttribute('data-nombre');
             
-            document.querySelectorAll('.candidate-card').forEach(card => {
+            document.querySelectorAll('.project-card').forEach(card => {
                 card.classList.remove('selected');
             });
             
             element.classList.add('selected');
-            candidatoSeleccionado = id;
+            proyectoSeleccionado = id;
             
-            document.getElementById('candidatoId').value = id;
+            document.getElementById('proyectoId').value = id;
             document.getElementById('selectedName').textContent = nombre;
             document.getElementById('selectedInfo').classList.add('show');
             document.getElementById('btnVote').disabled = false;
         }
 
         async function confirmarVoto() {
-            if (!candidatoSeleccionado) {
+            if (!proyectoSeleccionado) {
                 alert('Por favor selecciona un proyecto');
                 return;
             }
@@ -378,7 +478,7 @@
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        candidato_id: candidatoSeleccionado,
+                        proyecto_id: proyectoSeleccionado,
                         user_agent: navigator.userAgent
                     })
                 });

@@ -1,7 +1,7 @@
 from flask import Flask, render_template, redirect, url_for, flash, request, session, jsonify
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from config import Config
-from models import db, Administrador, Candidato, Voto
+from models import db, Administrador, Proyecto, Voto  # ← CAMBIO AQUÍ
 from datetime import datetime
 import hashlib
 import os
@@ -37,11 +37,10 @@ def generar_hash_voto(ip, user_agent, device_id=''):
 
 def obtener_ip_real(request):
     """Obtener la IP real del cliente considerando proxies"""
-    # Lista de headers donde puede estar la IP real
     ip_headers = [
-        'X-Forwarded-For',
         'X-Real-IP',
-        'CF-Connecting-IP',  # Cloudflare
+        'X-Forwarded-For',
+        'CF-Connecting-IP',
         'True-Client-IP',
         'X-Client-IP'
     ]
@@ -49,23 +48,26 @@ def obtener_ip_real(request):
     for header in ip_headers:
         ip = request.headers.get(header)
         if ip:
-            # X-Forwarded-For puede tener múltiples IPs separadas por coma
-            # La primera es la del cliente original
-            return ip.split(',')[0].strip()
+            ip = ip.split(',')[0].strip()
+            if not ip.startswith(('10.', '172.16.', '192.168.', '127.')):
+                print(f"🌐 IP detectada desde {header}: {ip}")
+                return ip
     
-    # Si no hay headers, usar remote_addr
-    return request.remote_addr
+    ip = request.remote_addr
+    print(f"⚠️ IP desde remote_addr: {ip}")
+    return ip
+
 # ================================
 # RUTAS PRINCIPALES - VOTACIÓN PÚBLICA
 # ================================
 @app.route('/verificar-voto', methods=['POST'])
 def verificar_voto():
-    """Verificar si el usuario ya votó antes de mostrar candidatos"""
+    """Verificar si el usuario ya votó antes de mostrar proyectos"""
     try:
         data = request.get_json()
         user_agent = data.get('user_agent')
         device_id = data.get('device_id', '')
-        ip = obtener_ip_real(request)  # ← CAMBIO AQUÍ
+        ip = obtener_ip_real(request)
         
         print(f"\n🔍 DEBUG VERIFICAR VOTO:")
         print(f"   IP Real: {ip}")
@@ -75,11 +77,9 @@ def verificar_voto():
         if not user_agent:
             return jsonify({'puede_votar': True})
         
-        # Generar hash
         hash_voto = generar_hash_voto(ip, user_agent, device_id)
         print(f"   Hash generado: {hash_voto[:16]}...")
         
-        # Verificar si existe
         voto_existente = Voto.query.filter_by(hash_voto=hash_voto).first()
         print(f"   ¿Existe en BD? {voto_existente is not None}")
         
@@ -103,8 +103,34 @@ def index():
 @app.route('/votacion-publica')
 def votacion_publica():
     """Página de votación pública sin login"""
-    candidatos = Candidato.query.filter_by(activo=True).all()
-    return render_template('votacion_publica.html', candidatos=candidatos)
+    # Obtener filtros
+    categoria_filtro = request.args.get('categoria', 'todas')
+    curso_filtro = request.args.get('curso', 'todos')
+    
+    # Query base
+    query = Proyecto.query.filter_by(activo=True)
+    
+    # Aplicar filtros
+    if categoria_filtro != 'todas':
+        query = query.filter_by(categoria=categoria_filtro)
+    if curso_filtro != 'todos':
+        query = query.filter_by(curso=curso_filtro)
+    
+    proyectos = query.all()
+    
+    # Obtener listas para filtros
+    categorias = db.session.query(Proyecto.categoria).filter_by(activo=True).distinct().all()
+    categorias = [c[0] for c in categorias if c[0]]
+    
+    cursos = db.session.query(Proyecto.curso).filter_by(activo=True).distinct().all()
+    cursos = sorted([c[0] for c in cursos if c[0]])
+    
+    return render_template('votacion_publica.html', 
+                         proyectos=proyectos,
+                         categorias=categorias,
+                         cursos=cursos,
+                         categoria_filtro=categoria_filtro,
+                         curso_filtro=curso_filtro)
 
 @app.route('/votar-publico', methods=['POST'])
 def votar_publico():
@@ -112,37 +138,34 @@ def votar_publico():
     try:
         data = request.get_json()
         
-        candidato_id = data.get('candidato_id')
+        proyecto_id = data.get('proyecto_id')  # ← CAMBIO AQUÍ
         user_agent = data.get('user_agent')
         device_id = data.get('device_id', '')
-        ip = obtener_ip_real(request)  # ← CAMBIO AQUÍ
+        ip = obtener_ip_real(request)
         
         print(f"\n🗳️ DEBUG VOTAR:")
         print(f"   IP Real: {ip}")
         print(f"   User-Agent: {user_agent[:50] if user_agent else 'N/A'}...")
         print(f"   Device ID: {device_id}")
-        print(f"   Candidato: {candidato_id}")
+        print(f"   Proyecto: {proyecto_id}")
         
-        # Validar datos
-        if not candidato_id or not user_agent:
+        if not proyecto_id or not user_agent:
             return jsonify({
                 'success': False,
                 'mensaje': 'Datos incompletos'
             }), 400
         
-        # Verificar que el candidato existe
-        candidato = Candidato.query.get(candidato_id)
-        if not candidato or not candidato.activo:
+        # Verificar que el proyecto existe
+        proyecto = Proyecto.query.get(proyecto_id)  # ← CAMBIO AQUÍ
+        if not proyecto or not proyecto.activo:
             return jsonify({
                 'success': False,
-                'mensaje': 'Candidato no válido'
+                'mensaje': 'Proyecto no válido'
             }), 400
         
-        # Generar hash único
         hash_voto = generar_hash_voto(ip, user_agent, device_id)
         print(f"   Hash generado: {hash_voto[:16]}...")
         
-        # Verificar si ya existe
         voto_existente = Voto.query.filter_by(hash_voto=hash_voto).first()
         
         if voto_existente:
@@ -152,9 +175,8 @@ def votar_publico():
                 'mensaje': 'Ya has votado en esta elección'
             }), 400
         
-        # Crear y guardar voto
         nuevo_voto = Voto(
-            candidato_id=int(candidato_id),
+            proyecto_id=int(proyecto_id),  # ← CAMBIO AQUÍ
             ip_address=ip,
             user_agent=user_agent,
             hash_voto=hash_voto
@@ -189,19 +211,37 @@ def gracias():
 # RUTAS DE ADMINISTRADOR
 # ================================
 from flask import Blueprint
-from wtforms import StringField, PasswordField, TextAreaField
+from wtforms import StringField, PasswordField, TextAreaField, SelectField
 from wtforms.validators import DataRequired
 from flask_wtf import FlaskForm
 
-# Formularios simples inline (ya no usamos forms.py)
 class AdminLoginForm(FlaskForm):
     usuario = StringField('Usuario', validators=[DataRequired()])
     password = PasswordField('Contraseña', validators=[DataRequired()])
 
-class CandidatoForm(FlaskForm):
-    nombre = StringField('Nombre', validators=[DataRequired()])
-    apellido = StringField('Apellido', validators=[DataRequired()])
-    partido = StringField('Partido Político', validators=[DataRequired()])
+class ProyectoForm(FlaskForm):
+    nombre_proyecto = StringField('Nombre del Proyecto', validators=[DataRequired()])
+    curso = StringField('Curso', validators=[DataRequired()])
+    ciclo = SelectField('Ciclo', choices=[
+        ('', 'Seleccionar...'),
+        ('Ciclo Básico', 'Ciclo Básico'),
+        ('Ciclo Superior', 'Ciclo Superior')
+    ])
+    materia = StringField('Materia', validators=[DataRequired()])
+    categoria = SelectField('Categoría', choices=[
+        ('', 'Seleccionar...'),
+        ('Robótica', '🤖 Robótica'),
+        ('Programación', '💻 Programación'),
+        ('Hardware', '🔧 Hardware'),
+        ('Procedimientos Técnicos', '🪵 Procedimientos Técnicos'),
+        ('Arte', '🎨 Arte'),
+        ('Literatura', '📚 Literatura'),
+        ('Ciencias Sociales', '🌍 Ciencias Sociales'),
+        ('Matemática', '🧮 Matemática'),
+        ('Catequesis', '✝️ Catequesis'),
+        ('Otros', '📌 Otros')
+    ])
+    integrantes = TextAreaField('Integrantes (separados por coma)', validators=[DataRequired()])
     descripcion = TextAreaField('Descripción')
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
@@ -230,86 +270,87 @@ def dashboard():
         flash('Acceso no autorizado', 'error')
         return redirect(url_for('admin.login'))
     
-    # Estadísticas
-    total_candidatos = Candidato.query.filter_by(activo=True).count()
+    total_proyectos = Proyecto.query.filter_by(activo=True).count()
     total_votos = Voto.query.count()
     
-    # Resultados por candidato - CAMBIA ESTA PARTE
-    candidatos_raw = db.session.query(
-        Candidato.id, 
-        Candidato.nombre, 
-        Candidato.apellido, 
-        Candidato.partido, 
+    proyectos_raw = db.session.query(
+        Proyecto.id, 
+        Proyecto.nombre_proyecto, 
+        Proyecto.curso,
+        Proyecto.materia,
+        Proyecto.categoria,
         db.func.count(Voto.id).label('votos')
-    ).outerjoin(Voto).group_by(Candidato.id).filter(Candidato.activo==True).all()
+    ).outerjoin(Voto).group_by(Proyecto.id).filter(Proyecto.activo==True).order_by(db.func.count(Voto.id).desc()).all()
     
-    # Convertir a lista de diccionarios para facilitar acceso en template
-    candidatos = []
-    for c in candidatos_raw:
-        candidatos.append({
-            'id': c[0],
-            'nombre': c[1],
-            'apellido': c[2],
-            'partido': c[3],
-            'votos': c[4]
+    proyectos = []
+    for p in proyectos_raw:
+        proyectos.append({
+            'id': p[0],
+            'nombre_proyecto': p[1],
+            'curso': p[2],
+            'materia': p[3],
+            'categoria': p[4],
+            'votos': p[5]
         })
     
     return render_template('admin/dashboard.html', 
-                         total_candidatos=total_candidatos,
+                         total_proyectos=total_proyectos,
                          total_votos=total_votos,
-                         candidatos=candidatos)
+                         proyectos=proyectos)
 
-@admin_bp.route('/candidatos', methods=['GET', 'POST'])
+@admin_bp.route('/proyectos', methods=['GET', 'POST'])
 @login_required
-def candidatos():
+def proyectos():
     if not is_admin():
         flash('Acceso no autorizado', 'error')
         return redirect(url_for('admin.login'))
     
-    form = CandidatoForm()
+    form = ProyectoForm()
     
     if request.method == 'POST':
         action = request.form.get('action')
         
         if action == 'agregar' and form.validate_on_submit():
-            candidato = Candidato(
-                nombre=form.nombre.data,
-                apellido=form.apellido.data,
-                partido=form.partido.data,
+            proyecto = Proyecto(
+                nombre_proyecto=form.nombre_proyecto.data,
+                curso=form.curso.data,
+                ciclo=form.ciclo.data,
+                materia=form.materia.data,
+                categoria=form.categoria.data,
+                integrantes=form.integrantes.data,
                 descripcion=form.descripcion.data
             )
             
             try:
-                db.session.add(candidato)
+                db.session.add(proyecto)
                 db.session.commit()
-                flash('Candidato agregado exitosamente.', 'success')
-                return redirect(url_for('admin.candidatos'))
+                flash('Proyecto agregado exitosamente.', 'success')
+                return redirect(url_for('admin.proyectos'))
             except Exception as e:
                 db.session.rollback()
-                flash('Error al agregar candidato', 'error')
+                flash('Error al agregar proyecto', 'error')
         
         elif action == 'eliminar':
-            candidato_id = request.form.get('candidato_id')
-            candidato = Candidato.query.get(candidato_id)
+            proyecto_id = request.form.get('proyecto_id')
+            proyecto = Proyecto.query.get(proyecto_id)
             
-            if candidato:
-                if candidato.votos.count() > 0:
-                    flash('No se puede eliminar un candidato que ya tiene votos', 'error')
+            if proyecto:
+                if proyecto.votos.count() > 0:
+                    flash('No se puede eliminar un proyecto que ya tiene votos', 'error')
                 else:
                     try:
-                        db.session.delete(candidato)
+                        db.session.delete(proyecto)
                         db.session.commit()
-                        flash('Candidato eliminado exitosamente.', 'success')
+                        flash('Proyecto eliminado exitosamente.', 'success')
                     except Exception as e:
                         db.session.rollback()
-                        flash('Error al eliminar candidato', 'error')
+                        flash('Error al eliminar proyecto', 'error')
     
-    # Obtener todos los candidatos con conteo de votos
-    candidatos = db.session.query(
-        Candidato, db.func.count(Voto.id).label('total_votos')
-    ).outerjoin(Voto).group_by(Candidato.id).filter(Candidato.activo==True).all()
+    proyectos_lista = db.session.query(
+        Proyecto, db.func.count(Voto.id).label('total_votos')
+    ).outerjoin(Voto).group_by(Proyecto.id).filter(Proyecto.activo==True).all()
     
-    return render_template('admin/candidatos.html', form=form, candidatos=candidatos)
+    return render_template('admin/proyectos.html', form=form, proyectos=proyectos_lista)
 
 @admin_bp.route('/votos')
 @login_required
@@ -318,10 +359,9 @@ def votos():
         flash('Acceso no autorizado', 'error')
         return redirect(url_for('admin.login'))
     
-    # Obtener todos los votos con información del candidato
     votos_lista = db.session.query(
-        Voto, Candidato.nombre, Candidato.apellido
-    ).join(Candidato).order_by(Voto.fecha_voto.desc()).all()
+        Voto, Proyecto.nombre_proyecto, Proyecto.curso
+    ).join(Proyecto).order_by(Voto.fecha_voto.desc()).all()
     
     total_votos = Voto.query.count()
     
@@ -336,7 +376,6 @@ def logout():
     logout_user()
     return redirect(url_for('admin.login'))
 
-# Registrar blueprint
 app.register_blueprint(admin_bp)
 
 # ================================
@@ -384,5 +423,7 @@ def init_db():
         print("✓ Base de datos inicializada")
 
 if __name__ == '__main__':
-    init_db()
-    app.run(debug=True)
+    # Comentar esto en producción
+    # init_db()
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=False)

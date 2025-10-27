@@ -26,37 +26,39 @@ class Administrador(UserMixin, db.Model):
     def __repr__(self):
         return f'<Admin {self.usuario}>'
 
-class Candidato(db.Model):
-    __tablename__ = 'candidatos'
+class Proyecto(db.Model):
+    __tablename__ = 'proyectos'
     
     id = db.Column(db.Integer, primary_key=True)
-    nombre = db.Column(db.String(100), nullable=False)
-    apellido = db.Column(db.String(100), nullable=False)
-    partido = db.Column(db.String(100), nullable=False)
+    nombre_proyecto = db.Column(db.String(200), nullable=False)
+    curso = db.Column(db.String(20), nullable=False)  # "1°A", "5°U"
+    ciclo = db.Column(db.String(30))  # "Ciclo Básico" o "Ciclo Superior"
+    materia = db.Column(db.String(100), nullable=False)
+    categoria = db.Column(db.String(50))  # "Robótica", "Programación", etc.
+    integrantes = db.Column(db.Text, nullable=False)  # Lista de nombres separados por coma
     descripcion = db.Column(db.Text)
-    imagen = db.Column(db.String(255))
     activo = db.Column(db.Boolean, default=True)
     fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow)
     
     # Relación con votos
-    votos = db.relationship('Voto', backref='candidato', lazy='dynamic', cascade='all, delete-orphan')
+    votos = db.relationship('Voto', backref='proyecto', lazy='dynamic', cascade='all, delete-orphan')
     
     @property
     def total_votos(self):
         return self.votos.count()
     
     def __repr__(self):
-        return f'<Candidato {self.nombre} {self.apellido}>'
+        return f'<Proyecto {self.nombre_proyecto}>'
 
 class Voto(db.Model):
     __tablename__ = 'votos'
     
     id = db.Column(db.Integer, primary_key=True)
-    candidato_id = db.Column(db.Integer, db.ForeignKey('candidatos.id'), nullable=False)
+    proyecto_id = db.Column(db.Integer, db.ForeignKey('proyectos.id'), nullable=False)
     fecha_voto = db.Column(db.DateTime, default=datetime.utcnow)
     ip_address = db.Column(db.String(45), nullable=False)
     user_agent = db.Column(db.Text, nullable=False)
     hash_voto = db.Column(db.String(64), unique=True, nullable=False, index=True)
     
     def __repr__(self):
-        return f'<Voto {self.id} -> Candidato {self.candidato_id}>'
+        return f'<Voto {self.id} -> Proyecto {self.proyecto_id}>'
