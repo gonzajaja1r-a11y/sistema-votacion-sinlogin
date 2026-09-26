@@ -64,6 +64,20 @@
     .footer a:hover {
         text-decoration: underline;
     }
+    .votacion-toggle {
+        display: flex; align-items: center; justify-content: space-between;
+        gap: 20px; padding: 20px 25px; border-radius: 12px; margin-bottom: 30px;
+    }
+    .votacion-toggle.abierta { background: #f0fdf4; border: 2px solid #22c55e; }
+    .votacion-toggle.cerrada { background: #fef2f2; border: 2px solid #ef4444; }
+    .votacion-toggle .estado { font-size: 1.1rem; font-weight: 700; }
+    .votacion-toggle.abierta .estado { color: #16a34a; }
+    .votacion-toggle.cerrada .estado { color: #dc2626; }
+    .btn-toggle {
+        padding: 10px 24px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; color: white;
+    }
+    .btn-toggle.cerrar { background: #dc2626; }
+    .btn-toggle.abrir { background: #22c55e; }
 </style>
 {% endblock %}
 
@@ -88,6 +102,19 @@
         <div class="stat-label">Votos Totales</div>
         <div class="stat-number">{{ total_votos }}</div>
     </div>
+</div>
+
+<div class="votacion-toggle {{ 'abierta' if votacion_abierta else 'cerrada' }}">
+    <div class="estado">
+        {% if votacion_abierta %}🟢 La votación está ABIERTA{% else %}🔴 La votación está CERRADA{% endif %}
+    </div>
+    <form method="POST" action="{{ url_for('admin.toggle_votacion') }}"
+          onsubmit="return confirm('{{ '¿Cerrar la votación? Nadie va a poder votar hasta que la vuelvas a abrir.' if votacion_abierta else '¿Abrir la votación?' }}');">
+        {{ toggle_form.hidden_tag() }}
+        <button type="submit" class="btn-toggle {{ 'cerrar' if votacion_abierta else 'abrir' }}">
+            {% if votacion_abierta %}🔒 Cerrar votación{% else %}🔓 Abrir votación{% endif %}
+        </button>
+    </form>
 </div>
 
 <div class="dashboard-body">

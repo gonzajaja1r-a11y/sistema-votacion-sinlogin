@@ -58,6 +58,11 @@
 </head>
 <body>
     <div class="container">
+        {% if not votacion_abierta %}
+        <div class="icon">🔒</div>
+        <h1>La votación está cerrada</h1>
+        <p class="meta">Gracias por tu interés. La votación de la Muestra Anual ITEL ya finalizó.</p>
+        {% else %}
         <div id="verifying"><p>⏳ Verificando...</p></div>
 
         <div id="voteForm" style="display:none;">
@@ -82,12 +87,15 @@
             <h1>Ya votaste en este stand</h1>
             <p class="meta">Solo se puede votar una vez por stand.</p>
         </div>
+        {% endif %}
     </div>
 
     <script>
         const codigo = "{{ stand.codigo_qr }}";
+        const votacionAbierta = {{ 'true' if votacion_abierta else 'false' }};
 
         window.addEventListener('load', async function() {
+            if (!votacionAbierta) return;
             try {
                 const res = await fetch(`/api/verificar-voto-stand/${codigo}`, {
                     method: 'POST',

@@ -61,3 +61,21 @@ class Voto(db.Model):
     
     def __repr__(self):
         return f'<Voto {self.id} -> Stand {self.stand_id}>'
+
+class Configuracion(db.Model):
+    """Tabla de una sola fila para guardar ajustes globales del sistema,
+    como si la votación está abierta o cerrada."""
+    __tablename__ = 'configuracion'
+
+    id = db.Column(db.Integer, primary_key=True)
+    votacion_abierta = db.Column(db.Boolean, default=True, nullable=False)
+
+    @staticmethod
+    def obtener():
+        """Devuelve la fila de configuración (id=1), creándola si no existe"""
+        config = Configuracion.query.get(1)
+        if not config:
+            config = Configuracion(id=1, votacion_abierta=True)
+            db.session.add(config)
+            db.session.commit()
+        return config

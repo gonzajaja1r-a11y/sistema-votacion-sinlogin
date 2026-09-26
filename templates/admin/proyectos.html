@@ -101,8 +101,9 @@
 <div class="content-grid">
     <div class="content-card form-card">
         <h2>➕ Agregar Stand (carga manual / emergencia)</h2>
-        <div style="margin-bottom: 20px;">
+        <div style="margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap;">
             <a href="{{ url_for('admin.importar_stands') }}" class="btn-link-action" style="background:#764ba2;">📥 Importar varios desde Excel</a>
+            <a href="{{ url_for('admin.zip_todos_stands') }}" class="btn-link-action pdf">⬇️ Descargar TODOS los QR</a>
         </div>
         <form method="POST">
             {{ form.hidden_tag() }}

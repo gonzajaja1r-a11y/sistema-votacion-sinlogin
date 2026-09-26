@@ -4,7 +4,8 @@
 
 {% block content %}
 <style>
-    .page-header { display: flex; align-items: center; gap: 15px; margin-bottom: 30px; }
+    .page-header { display: flex; align-items: center; justify-content: space-between; gap: 15px; margin-bottom: 30px; flex-wrap: wrap; }
+    .page-title { display: flex; align-items: center; gap: 15px; }
     .logo-main { width: 40px; height: 40px; background-color: #4C46C7; border-radius: 50%; }
     .page-header h1 { color: #4C46C7; font-size: 2rem; font-weight: 600; }
     .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 25px; margin-bottom: 30px; }
@@ -16,11 +17,21 @@
     .votos-table th, .votos-table td { padding: 16px; text-align: left; border-bottom: 1px solid #e5e7eb; }
     .votos-table th { font-weight: 600; font-size: 0.9rem; color: #6b7280; text-transform: uppercase; }
     .hash-cell { font-family: monospace; font-size: 0.85rem; color: #6b7280; }
+    .btn-export {
+        padding: 12px 24px; background: #22c55e; color: white; border-radius: 8px;
+        text-decoration: none; font-weight: 600; display: inline-flex; align-items: center; gap: 8px;
+    }
+    .btn-export:hover { background: #16a34a; }
 </style>
 
 <div class="page-header">
-    <div class="logo-main"></div>
-    <h1>Lista de <span style="text-decoration: underline;">Votos</span></h1>
+    <div class="page-title">
+        <div class="logo-main"></div>
+        <h1>Lista de <span style="text-decoration: underline;">Votos</span></h1>
+    </div>
+    {% if votos %}
+    <a href="{{ url_for('admin.exportar_votos_csv') }}" class="btn-export">📊 Exportar a CSV</a>
+    {% endif %}
 </div>
 
 <div class="stats-grid">
@@ -37,7 +48,7 @@
                 <th>ID</th>
                 <th>Proyecto Votado</th>
                 <th>Curso</th>
-                <th>Fecha y Hora</th>
+                <th>Fecha y Hora (Argentina)</th>
                 <th>IP</th>
                 <th>Hash (últimos 12 dígitos)</th>
             </tr>
@@ -54,7 +65,7 @@
                     <td><strong>#{{ voto.id }}</strong></td>
                     <td><strong>{{ nombre_proyecto }}</strong></td>
                     <td>{{ curso }}</td>
-                    <td>{{ voto.fecha_voto.strftime('%d/%m/%Y %H:%M:%S') }}</td>
+                    <td>{{ voto.fecha_voto|hora_ar }}</td>
                     <td>{{ voto.ip_address }}</td>
                     <td class="hash-cell">...{{ voto.hash_voto[-12:] }}</td>
                 </tr>

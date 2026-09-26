@@ -1,13 +1,15 @@
 from flask import Flask, render_template, redirect, url_for, flash, request, session, jsonify, send_file
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from config import Config
-from models import db, Administrador, Stand, Voto
+from models import db, Administrador, Stand, Voto, Configuracion
 from datetime import datetime
+from zoneinfo import ZoneInfo
 import hashlib
 import random
 import string
 import os
 import io
+import csv
 import json
 import zipfile
 import qrcode
@@ -33,6 +35,19 @@ def load_user(user_id):
 def is_admin():
     """Helper para verificar si el usuario actual es admin"""
     return current_user.is_authenticated and isinstance(current_user, Administrador)
+
+# ================================
+# FILTROS DE JINJA
+# ================================
+
+@app.template_filter('hora_ar')
+def hora_ar(dt):
+    """Convierte un datetime UTC (naive) a hora de Argentina, formateado"""
+    if dt is None:
+        return ''
+    dt_utc = dt.replace(tzinfo=ZoneInfo('UTC'))
+    dt_ar = dt_utc.astimezone(ZoneInfo('America/Argentina/Buenos_Aires'))
+    return dt_ar.strftime('%d/%m/%Y %H:%M:%S')
 
 # ================================
 # FUNCIONES AUXILIARES
@@ -178,6 +193,18 @@ def generar_pdf_bytes(stand):
 
     return bytes(pdf.output())
 
+def generar_zip_stands(stands):
+    """Empaqueta el PDF (6 copias) de cada stand en un único .zip en memoria"""
+    zip_buf = io.BytesIO()
+    with zipfile.ZipFile(zip_buf, 'w', zipfile.ZIP_DEFLATED) as zf:
+        for stand in stands:
+            pdf_bytes = generar_pdf_bytes(stand)
+            nombre_pdf = f"QR_{stand.codigo_qr}_{stand.nombre_proyecto[:30]}.pdf"
+            nombre_pdf = nombre_pdf.replace('/', '-').replace('\\', '-').replace(' ', '_')
+            zf.writestr(nombre_pdf, pdf_bytes)
+    zip_buf.seek(0)
+    return zip_buf
+
 # Columnas obligatorias que debe tener el Excel a importar
 COLUMNAS_REQUERIDAS = ['nombre_proyecto', 'profesor', 'curso', 'materia', 'alumnos']
 
@@ -202,7 +229,7 @@ def leer_excel_stands(file_stream):
     errores = []
     for i, fila in enumerate(filas[1:], start=2):
         if not fila or all(c is None or str(c).strip() == '' for c in fila):
-            continue  # fila vacía, se ignora silenciosamente
+            continue
 
         def obtener(campo):
             pos = idx[campo]
@@ -240,7 +267,7 @@ def separar_nuevas_y_duplicadas(validas):
             duplicadas.append(fila)
         else:
             nuevas.append(fila)
-            claves_existentes.add(clave)  # evita duplicados repetidos dentro del mismo excel
+            claves_existentes.add(clave)
 
     return nuevas, duplicadas
 
@@ -254,7 +281,9 @@ def votar_stand(codigo):
     stand = Stand.query.filter_by(codigo_qr=codigo.upper(), activo=True).first()
     if not stand:
         return render_template('stand_no_encontrado.html'), 404
-    return render_template('votar_stand.html', stand=stand)
+
+    config = Configuracion.obtener()
+    return render_template('votar_stand.html', stand=stand, votacion_abierta=config.votacion_abierta)
 
 @app.route('/api/verificar-voto-stand/<codigo>', methods=['POST'])
 def verificar_voto_stand(codigo):
@@ -279,6 +308,10 @@ def verificar_voto_stand(codigo):
 def confirmar_voto_stand(codigo):
     """Registrar el voto para un stand específico"""
     try:
+        config = Configuracion.obtener()
+        if not config.votacion_abierta:
+            return jsonify({'success': False, 'mensaje': 'La votación está cerrada'}), 400
+
         stand = Stand.query.filter_by(codigo_qr=codigo.upper(), activo=True).first()
         if not stand:
             return jsonify({'success': False, 'mensaje': 'Stand no válido'}), 404
@@ -396,10 +429,13 @@ class ImportarExcelForm(FlaskForm):
     ])
 
 class ConfirmarImportForm(FlaskForm):
-    pass  # solo se usa para validar el token CSRF
+    pass
 
 class EliminarTodoForm(FlaskForm):
-    pass  # solo se usa para validar el token CSRF
+    pass
+
+class ToggleVotacionForm(FlaskForm):
+    pass
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
 
@@ -429,6 +465,8 @@ def dashboard():
 
     total_stands = Stand.query.filter_by(activo=True).count()
     total_votos = Voto.query.count()
+    config = Configuracion.obtener()
+    toggle_form = ToggleVotacionForm()
 
     stands_raw = db.session.query(
         Stand.id,
@@ -452,7 +490,27 @@ def dashboard():
     return render_template('admin/dashboard.html',
                          total_proyectos=total_stands,
                          total_votos=total_votos,
-                         proyectos=proyectos)
+                         proyectos=proyectos,
+                         votacion_abierta=config.votacion_abierta,
+                         toggle_form=toggle_form)
+
+@admin_bp.route('/votacion/toggle', methods=['POST'])
+@login_required
+def toggle_votacion():
+    """Abre o cierra la votación pública"""
+    if not is_admin():
+        flash('Acceso no autorizado', 'error')
+        return redirect(url_for('admin.login'))
+
+    form = ToggleVotacionForm()
+    if form.validate_on_submit():
+        config = Configuracion.obtener()
+        config.votacion_abierta = not config.votacion_abierta
+        db.session.commit()
+        estado = 'ABIERTA 🟢' if config.votacion_abierta else 'CERRADA 🔴'
+        flash(f'Votación {estado}', 'success')
+
+    return redirect(url_for('admin.dashboard'))
 
 @admin_bp.route('/stands', methods=['GET', 'POST'])
 @login_required
@@ -524,7 +582,6 @@ def eliminar_todos_stands():
     try:
         total_stands = Stand.query.count()
         total_votos = Voto.query.count()
-        # Se borran los votos primero por la relación de clave foránea
         Voto.query.delete()
         Stand.query.delete()
         db.session.commit()
@@ -592,6 +649,23 @@ def stand_pdf(stand_id):
 
     nombre_archivo = f"QR_{stand.codigo_qr}.pdf"
     return send_file(pdf_buf, mimetype='application/pdf', as_attachment=True, download_name=nombre_archivo)
+
+@admin_bp.route('/stands/zip-todos')
+@login_required
+def zip_todos_stands():
+    """Descarga un .zip con el PDF de TODOS los stands activos"""
+    if not is_admin():
+        flash('Acceso no autorizado', 'error')
+        return redirect(url_for('admin.login'))
+
+    stands = Stand.query.filter_by(activo=True).all()
+    if not stands:
+        flash('No hay stands cargados todavía.', 'error')
+        return redirect(url_for('admin.proyectos'))
+
+    zip_buf = generar_zip_stands(stands)
+    nombre_zip = f'Todos_los_QR_ITEL_{datetime.now().strftime("%Y%m%d_%H%M")}.zip'
+    return send_file(zip_buf, mimetype='application/zip', as_attachment=True, download_name=nombre_zip)
 
 @admin_bp.route('/stands/importar', methods=['GET', 'POST'])
 @login_required
@@ -693,9 +767,7 @@ def importar_exito():
 @admin_bp.route('/stands/importar/zip')
 @login_required
 def importar_zip():
-    """Genera (o regenera) el .zip con los PDF de los stands indicados.
-    Se puede descargar las veces que haga falta sin duplicar nada, porque
-    no crea registros nuevos: solo arma los PDF a partir de los que ya existen."""
+    """Genera (o regenera) el .zip con los PDF de los stands indicados."""
     if not is_admin():
         flash('Acceso no autorizado', 'error')
         return redirect(url_for('admin.login'))
@@ -708,15 +780,7 @@ def importar_zip():
         flash('No se encontraron stands para descargar.', 'error')
         return redirect(url_for('admin.proyectos'))
 
-    zip_buf = io.BytesIO()
-    with zipfile.ZipFile(zip_buf, 'w', zipfile.ZIP_DEFLATED) as zf:
-        for stand in stands:
-            pdf_bytes = generar_pdf_bytes(stand)
-            nombre_pdf = f"QR_{stand.codigo_qr}_{stand.nombre_proyecto[:30]}.pdf"
-            nombre_pdf = nombre_pdf.replace('/', '-').replace('\\', '-').replace(' ', '_')
-            zf.writestr(nombre_pdf, pdf_bytes)
-    zip_buf.seek(0)
-
+    zip_buf = generar_zip_stands(stands)
     nombre_zip = f'QRs_ITEL_{datetime.now().strftime("%Y%m%d_%H%M")}.zip'
     return send_file(zip_buf, mimetype='application/zip', as_attachment=True, download_name=nombre_zip)
 
@@ -736,6 +800,38 @@ def votos():
     return render_template('admin/votos.html',
                          votos=votos_lista,
                          total_votos=total_votos)
+
+@admin_bp.route('/votos/exportar-csv')
+@login_required
+def exportar_votos_csv():
+    """Exporta todos los votos a un archivo CSV descargable"""
+    if not is_admin():
+        flash('Acceso no autorizado', 'error')
+        return redirect(url_for('admin.login'))
+
+    votos_lista = db.session.query(
+        Voto, Stand.nombre_proyecto, Stand.curso, Stand.codigo_qr
+    ).join(Stand).order_by(Voto.fecha_voto.desc()).all()
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(['ID Voto', 'Proyecto', 'Curso', 'Codigo QR', 'Fecha y Hora (Argentina)', 'IP'])
+
+    for voto, nombre_proyecto, curso, codigo_qr in votos_lista:
+        writer.writerow([
+            voto.id,
+            nombre_proyecto,
+            curso,
+            codigo_qr,
+            hora_ar(voto.fecha_voto),
+            voto.ip_address
+        ])
+
+    csv_bytes = io.BytesIO(output.getvalue().encode('utf-8-sig'))  # utf-8-sig para que Excel lea bien los acentos
+    csv_bytes.seek(0)
+
+    nombre_archivo = f'votos_ITEL_{datetime.now().strftime("%Y%m%d_%H%M")}.csv'
+    return send_file(csv_bytes, mimetype='text/csv', as_attachment=True, download_name=nombre_archivo)
 
 @admin_bp.route('/logout')
 @login_required
