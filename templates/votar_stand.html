@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Votar - {{ stand.nombre_proyecto }}</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container {
+            max-width: 500px;
+            width: 100%;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            text-align: center;
+        }
+        .icon { font-size: 3.5rem; margin-bottom: 15px; }
+        h1 { font-size: 1.8rem; color: #333; margin-bottom: 8px; }
+        .meta { color: #666; margin-bottom: 5px; font-size: 1.05rem; }
+        .meta strong { color: #4C46C7; }
+        .info-box {
+            background: #f0f4ff;
+            border: 2px solid #667eea;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 25px 0;
+            text-align: left;
+        }
+        .info-box p { margin-bottom: 8px; color: #333; }
+        .info-box p:last-child { margin-bottom: 0; }
+        .btn-vote {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.15rem;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .btn-vote:disabled { background: #ccc; cursor: not-allowed; }
+        #successBox, #votedBox { display: none; }
+        #successBox.show, #votedBox.show { display: block; }
+        .success-icon { font-size: 4rem; color: #22c55e; margin-bottom: 15px; }
+        #verifying { padding: 40px 0; color: #667eea; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="verifying"><p>⏳ Verificando...</p></div>
+
+        <div id="voteForm" style="display:none;">
+            <div class="icon">🗳️</div>
+            <h1>{{ stand.nombre_proyecto }}</h1>
+            <div class="info-box">
+                <p><strong>Profesor:</strong> {{ stand.profesor_cargo }}</p>
+                <p><strong>Materia:</strong> {{ stand.materia }}</p>
+                <p><strong>Curso:</strong> {{ stand.curso }}</p>
+            </div>
+            <button class="btn-vote" id="btnVote" onclick="confirmarVoto()">Confirmar mi voto</button>
+        </div>
+
+        <div id="successBox">
+            <div class="success-icon">✅</div>
+            <h1>¡Votaste por {{ stand.nombre_proyecto }}!</h1>
+            <p class="meta">Gracias por participar en la Muestra Anual ITEL.</p>
+        </div>
+
+        <div id="votedBox">
+            <div class="icon">✓</div>
+            <h1>Ya votaste en este stand</h1>
+            <p class="meta">Solo se puede votar una vez por stand.</p>
+        </div>
+    </div>
+
+    <script>
+        const codigo = "{{ stand.codigo_qr }}";
+
+        window.addEventListener('load', async function() {
+            try {
+                const res = await fetch(`/api/verificar-voto-stand/${codigo}`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ user_agent: navigator.userAgent })
+                });
+                const data = await res.json();
+                document.getElementById('verifying').style.display = 'none';
+                if (data.puede_votar) {
+                    document.getElementById('voteForm').style.display = 'block';
+                } else {
+                    document.getElementById('votedBox').classList.add('show');
+                }
+            } catch (e) {
+                document.getElementById('verifying').style.display = 'none';
+                document.getElementById('voteForm').style.display = 'block';
+            }
+        });
+
+        async function confirmarVoto() {
+            const btn = document.getElementById('btnVote');
+            btn.disabled = true;
+            btn.textContent = 'Registrando...';
+            try {
+                const res = await fetch(`/votar/${codigo}/confirmar`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ user_agent: navigator.userAgent })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    document.getElementById('voteForm').style.display = 'none';
+                    document.getElementById('successBox').classList.add('show');
+                } else {
+                    alert(data.mensaje || 'Error al votar');
+                    btn.disabled = false;
+                    btn.textContent = 'Confirmar mi voto';
+                }
+            } catch (e) {
+                alert('Error de conexión, intentá de nuevo.');
+                btn.disabled = false;
+                btn.textContent = 'Confirmar mi voto';
+            }
+        }
+    </script>
+</body>
+</html>

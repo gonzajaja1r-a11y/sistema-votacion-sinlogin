@@ -5,6 +5,7 @@ flask-wtf==1.1.1
 wtforms==3.0.1
 werkzeug==2.3.7
 python-dotenv==1.0.0
-bcrypt==4.0.1
-email-validator
-PyMySQL==1.1.0
+psycopg2-binary==2.9.10
+qrcode[pil]==7.4.2
+fpdf2==2.7.9
+openpyxl==3.1.5

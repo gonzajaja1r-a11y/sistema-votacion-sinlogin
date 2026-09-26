@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block title %}Importación exitosa - Admin{% endblock %}
+
+{% block content %}
+<style>
+    .logo-header {
+        display: flex; align-items: center; justify-content: center; gap: 20px;
+        margin-bottom: 30px; padding-bottom: 20px; border-bottom: 2px solid #e5e7eb;
+    }
+    .logo-header img { height: 60px; width: auto; }
+    .logo-header .school-name { font-size: 2rem; font-weight: 700; color: #4C46C7; }
+    .success-card {
+        max-width: 600px; margin: 0 auto; background: white; border: 1px solid #e5e7eb;
+        border-radius: 16px; padding: 40px; text-align: center;
+    }
+    .success-icon { font-size: 4rem; margin-bottom: 15px; }
+    .success-card h1 { color: #16a34a; font-size: 1.8rem; margin-bottom: 10px; }
+    .success-card p { color: #666; margin-bottom: 25px; }
+    .lista-stands {
+        text-align: left; background: #f9fafb; border-radius: 10px;
+        padding: 15px 20px; margin-bottom: 25px; max-height: 250px; overflow-y: auto;
+    }
+    .lista-stands div { padding: 8px 0; border-bottom: 1px solid #e5e7eb; font-size: 0.9rem; }
+    .lista-stands div:last-child { border-bottom: none; }
+    .lista-stands .codigo { font-family: monospace; color: #4C46C7; font-weight: 700; }
+    .btn-download {
+        display: inline-block; padding: 16px 40px; background: #22c55e; color: white;
+        border-radius: 50px; text-decoration: none; font-weight: 700; font-size: 1.05rem;
+        margin-bottom: 15px;
+    }
+    .btn-download:hover { background: #16a34a; }
+    .back-link a { color: #4C46C7; text-decoration: none; font-size: 0.95rem; }
+</style>
+
+<div class="logo-header">
+    <img src="{{ url_for('static', filename='img/logo-itel.png') }}" alt="ITEL Logo">
+    <span class="school-name">ITEL</span>
+</div>
+
+<div class="success-card">
+    <div class="success-icon">✅</div>
+    <h1>¡Importación exitosa!</h1>
+    <p>Se crearon {{ stands|length }} stands con su código QR único.</p>
+
+    <div class="lista-stands">
+        {% for stand in stands %}
+        <div><span class="codigo">{{ stand.codigo_qr }}</span> — {{ stand.nombre_proyecto }} ({{ stand.curso }})</div>
+        {% endfor %}
+    </div>
+
+    <a href="{{ url_for('admin.importar_zip', ids=ids_str) }}" class="btn-download">⬇️ Descargar ZIP con todos los QR (PDF)</a>
+
+    <div class="back-link">
+        <a href="{{ url_for('admin.proyectos') }}">← Volver a Gestión de Stands</a>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block title %}Editar Stand - Admin{% endblock %}
+
+{% block content %}
+<style>
+    .logo-header {
+        display: flex; align-items: center; justify-content: center; gap: 20px;
+        margin-bottom: 30px; padding-bottom: 20px; border-bottom: 2px solid #e5e7eb;
+    }
+    .logo-header img { height: 60px; width: auto; }
+    .logo-header .school-name { font-size: 2rem; font-weight: 700; color: #4C46C7; }
+    .page-header { display: flex; align-items: center; gap: 15px; margin-bottom: 30px; }
+    .logo-main { width: 40px; height: 40px; background-color: #4C46C7; border-radius: 50%; }
+    .page-header h1 { color: #4C46C7; font-size: 2rem; font-weight: 600; }
+    .content-card {
+        background: white; padding: 30px; border: 1px solid #e5e7eb; border-radius: 12px;
+        max-width: 600px; margin: 0 auto;
+    }
+    .codigo-info {
+        background: #f0f4ff; border: 2px solid #667eea; border-radius: 10px;
+        padding: 15px 20px; margin-bottom: 25px; text-align: center;
+    }
+    .codigo-info span { font-family: monospace; font-weight: 800; font-size: 1.3rem; color: #4C46C7; }
+    .back-link { display: block; text-align: center; margin-top: 20px; }
+    .back-link a { color: #4C46C7; text-decoration: none; }
+</style>
+
+<div class="logo-header">
+    <img src="{{ url_for('static', filename='img/logo-itel.png') }}" alt="ITEL Logo">
+    <span class="school-name">ITEL</span>
+</div>
+
+<div class="page-header">
+    <div class="logo-main"></div>
+    <h1>Editar <span style="text-decoration: underline;">Stand</span></h1>
+</div>
+
+<div class="content-card">
+    <div class="codigo-info">
+        Código QR (no cambia): <span>{{ stand.codigo_qr }}</span>
+    </div>
+
+    <form method="POST">
+        {{ form.hidden_tag() }}
+
+        <div class="form-group">
+            {{ form.nombre_proyecto.label }}
+            {{ form.nombre_proyecto() }}
+        </div>
+
+        <div class="form-group">
+            {{ form.profesor_cargo.label }}
+            {{ form.profesor_cargo() }}
+        </div>
+
+        <div class="form-group">
+            {{ form.materia.label }}
+            {{ form.materia() }}
+        </div>
+
+        <div class="form-group">
+            {{ form.curso.label }}
+            {{ form.curso() }}
+        </div>
+
+        <div class="form-group">
+            {{ form.alumnos.label }}
+            {{ form.alumnos(rows=3) }}
+        </div>
+
+        <button type="submit" class="btn-primary" style="width: 100%;">Guardar cambios</button>
+    </form>
+
+    <div class="back-link">
+        <a href="{{ url_for('admin.proyectos') }}">← Volver a Gestión de Stands</a>
+    </div>
+</div>
+{% endblock %}

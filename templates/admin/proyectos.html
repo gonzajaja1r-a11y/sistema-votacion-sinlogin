@@ -1,9 +1,20 @@
 {% extends "base.html" %}
 
-{% block title %}Gestión de Proyectos - Admin{% endblock %}
+{% block title %}Gestión de Stands - Admin{% endblock %}
 
 {% block content %}
 <style>
+    .logo-header {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 20px;
+        margin-bottom: 30px;
+        padding-bottom: 20px;
+        border-bottom: 2px solid #e5e7eb;
+    }
+    .logo-header img { height: 60px; width: auto; }
+    .logo-header .school-name { font-size: 2rem; font-weight: 700; color: #4C46C7; }
     .page-header { display: flex; align-items: center; gap: 15px; margin-bottom: 30px; }
     .logo-main { width: 40px; height: 40px; background-color: #4C46C7; border-radius: 50%; }
     .page-header h1 { color: #4C46C7; font-size: 2rem; font-weight: 600; }
@@ -11,33 +22,74 @@
     .stat-card { background: white; padding: 25px; border: 1px solid #e5e7eb; border-radius: 12px; }
     .stat-label { font-size: 1rem; color: #666; font-weight: 500; margin-bottom: 8px; }
     .stat-number { font-size: 2.5rem; font-weight: 700; color: #111827; }
-    .content-grid { display: grid; grid-template-columns: 1fr 2fr; gap: 30px; align-items: flex-start; }
+    .content-grid { display: grid; grid-template-columns: 1fr 2fr; gap: 30px; align-items: flex-start; margin-bottom: 60px; }
     .content-card { background: white; padding: 30px; border: 1px solid #e5e7eb; border-radius: 12px; }
     .content-card h2 { font-size: 1.3rem; font-weight: 600; margin-bottom: 25px; }
-    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-    .proyectos-table { width: 100%; border-collapse: collapse; }
-    .proyectos-table th, .proyectos-table td { padding: 16px; text-align: left; border-bottom: 1px solid #e5e7eb; }
-    .proyectos-table th { font-weight: 600; font-size: 0.9rem; color: #6b7280; text-transform: uppercase; }
+    .stands-table { width: 100%; border-collapse: collapse; }
+    .stands-table th, .stands-table td { padding: 16px; text-align: left; border-bottom: 1px solid #e5e7eb; }
+    .stands-table th { font-weight: 600; font-size: 0.9rem; color: #6b7280; text-transform: uppercase; }
     .no-delete-text { font-size: 0.9rem; color: #9ca3af; }
-    .category-badge {
+    .codigo-badge {
         display: inline-block;
         padding: 4px 12px;
-        border-radius: 12px;
+        border-radius: 8px;
         font-size: 0.85rem;
-        font-weight: 600;
+        font-weight: 700;
+        font-family: monospace;
         background: #f0f4ff;
         color: #4C46C7;
     }
+    .btn-link-action {
+        display: inline-block;
+        padding: 6px 12px;
+        margin: 2px 0;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        text-decoration: none;
+        background: #4C46C7;
+        color: white;
+    }
+    .btn-link-action:hover { background: #3730a3; }
+    .btn-link-action.pdf { background: #22c55e; }
+    .btn-link-action.pdf:hover { background: #16a34a; }
+    .acciones-cell { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+    .btn-danger-zone {
+        background: #fef2f2; border: 2px solid #ef4444; border-radius: 12px;
+        padding: 20px; margin-bottom: 25px;
+    }
+    .btn-danger-zone p { color: #991b1b; font-size: 0.9rem; margin-bottom: 12px; }
+    .btn-eliminar-todos {
+        background: #dc2626; color: white; border: none; padding: 10px 24px;
+        border-radius: 8px; font-weight: 600; cursor: pointer;
+    }
+    .btn-eliminar-todos:hover { background: #b91c1c; }
+    .footer {
+        text-align: center;
+        padding: 20px;
+        margin-top: 40px;
+        border-top: 1px solid #e5e7eb;
+        color: #999;
+        font-size: 0.85rem;
+    }
+    .footer a { color: #4C46C7; text-decoration: none; }
+    .footer a:hover { text-decoration: underline; }
 </style>
+
+<!-- Logo ITEL -->
+<div class="logo-header">
+    <img src="{{ url_for('static', filename='img/logo-itel.png') }}" alt="ITEL Logo">
+    <span class="school-name">ITEL</span>
+</div>
 
 <div class="page-header">
     <div class="logo-main"></div>
-    <h1>Gestión de <span style="text-decoration: underline;">Proyectos</span></h1>
+    <h1>Gestión de <span style="text-decoration: underline;">Stands</span></h1>
 </div>
 
 <div class="stats-grid">
     <div class="stat-card">
-        <div class="stat-label">Total Proyectos</div>
+        <div class="stat-label">Total Stands</div>
         <div class="stat-number">{{ proyectos|length }}</div>
     </div>
     <div class="stat-card">
@@ -48,113 +100,120 @@
 
 <div class="content-grid">
     <div class="content-card form-card">
-        <h2>➕ Agregar Nuevo Proyecto</h2>
+        <h2>➕ Agregar Stand (carga manual / emergencia)</h2>
+        <div style="margin-bottom: 20px;">
+            <a href="{{ url_for('admin.importar_stands') }}" class="btn-link-action" style="background:#764ba2;">📥 Importar varios desde Excel</a>
+        </div>
         <form method="POST">
             {{ form.hidden_tag() }}
             <input type="hidden" name="action" value="agregar">
-            
+
             <div class="form-group">
                 {{ form.nombre_proyecto.label }}
-                {{ form.nombre_proyecto() }}
+                {{ form.nombre_proyecto(placeholder="Ej: Sistema de Votación") }}
                 {% if form.nombre_proyecto.errors %}
                     <div style="color: #dc2626; font-size: 14px; margin-top: 5px;">
                         {% for error in form.nombre_proyecto.errors %}{{ error }}{% endfor %}
                     </div>
                 {% endif %}
             </div>
-            
-            <div class="form-row">
-                <div class="form-group">
-                    {{ form.curso.label }}
-                    {{ form.curso(placeholder="Ej: 5°U") }}
-                    {% if form.curso.errors %}
-                        <div style="color: #dc2626; font-size: 14px; margin-top: 5px;">
-                            {% for error in form.curso.errors %}{{ error }}{% endfor %}
-                        </div>
-                    {% endif %}
-                </div>
-                <div class="form-group">
-                    {{ form.ciclo.label }}
-                    {{ form.ciclo() }}
-                </div>
-            </div>
-            
-            <div class="form-row">
-                <div class="form-group">
-                    {{ form.materia.label }}
-                    {{ form.materia(placeholder="Ej: Lab. Programación II") }}
-                    {% if form.materia.errors %}
-                        <div style="color: #dc2626; font-size: 14px; margin-top: 5px;">
-                            {% for error in form.materia.errors %}{{ error }}{% endfor %}
-                        </div>
-                    {% endif %}
-                </div>
-                <div class="form-group">
-                    {{ form.categoria.label }}
-                    {{ form.categoria() }}
-                </div>
-            </div>
-            
+
             <div class="form-group">
-                {{ form.integrantes.label }}
-                {{ form.integrantes(rows=3, placeholder="Pérez Juan, González María, ...") }}
-                {% if form.integrantes.errors %}
+                {{ form.profesor_cargo.label }}
+                {{ form.profesor_cargo(placeholder="Ej: Prof. Rolón") }}
+                {% if form.profesor_cargo.errors %}
                     <div style="color: #dc2626; font-size: 14px; margin-top: 5px;">
-                        {% for error in form.integrantes.errors %}{{ error }}{% endfor %}
+                        {% for error in form.profesor_cargo.errors %}{{ error }}{% endfor %}
                     </div>
                 {% endif %}
             </div>
-            
+
             <div class="form-group">
-                {{ form.descripcion.label }}
-                {{ form.descripcion(rows=3, placeholder="Descripción breve del proyecto...") }}
+                {{ form.materia.label }}
+                {{ form.materia(placeholder="Ej: Lab. Programación II") }}
+                {% if form.materia.errors %}
+                    <div style="color: #dc2626; font-size: 14px; margin-top: 5px;">
+                        {% for error in form.materia.errors %}{{ error }}{% endfor %}
+                    </div>
+                {% endif %}
             </div>
-            
-            <button type="submit" class="btn-primary">Agregar Proyecto</button>
+
+            <div class="form-group">
+                {{ form.curso.label }}
+                {{ form.curso(placeholder="Ej: 5°U") }}
+                {% if form.curso.errors %}
+                    <div style="color: #dc2626; font-size: 14px; margin-top: 5px;">
+                        {% for error in form.curso.errors %}{{ error }}{% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                {{ form.alumnos.label }}
+                {{ form.alumnos(rows=3, placeholder="Pérez Juan, González María, ...") }}
+                {% if form.alumnos.errors %}
+                    <div style="color: #dc2626; font-size: 14px; margin-top: 5px;">
+                        {% for error in form.alumnos.errors %}{{ error }}{% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <button type="submit" class="btn-primary">Agregar Stand</button>
         </form>
     </div>
 
     <div class="content-card list-card">
-        <h2>📋 Lista de Proyectos</h2>
-        <table class="proyectos-table">
+        <h2>📋 Lista de Stands</h2>
+
+        <div class="btn-danger-zone">
+            <p>⚠️ Zona de riesgo: esto borra TODOS los stands y TODOS los votos registrados. Usalo solo para reiniciar el sistema entre una muestra y otra.</p>
+            <form method="POST" action="{{ url_for('admin.eliminar_todos_stands') }}"
+                  onsubmit="return confirm('¿Estás TOTALMENTE seguro?\n\nSe van a borrar TODOS los stands y TODOS los votos. Esta acción no se puede deshacer.');">
+                {{ eliminar_form.hidden_tag() }}
+                <button type="submit" class="btn-eliminar-todos">🗑️ Eliminar TODOS los stands</button>
+            </form>
+        </div>
+
+        <table class="stands-table">
             <thead>
                 <tr>
-                    <th>Proyecto</th>
-                    <th>Categoría</th>
+                    <th>Stand</th>
+                    <th>Código QR</th>
                     <th>Votos</th>
                     <th>Acciones</th>
                 </tr>
             </thead>
             <tbody>
                 {% if not proyectos %}
-                    <tr><td colspan="4" style="text-align: center; padding: 40px;">Aún no hay proyectos registrados.</td></tr>
+                    <tr><td colspan="4" style="text-align: center; padding: 40px;">Aún no hay stands registrados.</td></tr>
                 {% else %}
-                    {% for proyecto_data in proyectos %}
-                    {% set proyecto = proyecto_data[0] %}
-                    {% set total_votos = proyecto_data[1] %}
+                    {% for stand_data in proyectos %}
+                    {% set stand = stand_data[0] %}
+                    {% set total_votos = stand_data[1] %}
                     <tr>
                         <td>
-                            <strong>{{ proyecto.nombre_proyecto }}</strong><br>
-                            <small style="color:#6b7280;">{{ proyecto.curso }} - {{ proyecto.materia }}</small><br>
-                            <small style="color:#9ca3af;">{{ proyecto.integrantes[:50] }}{% if proyecto.integrantes|length > 50 %}...{% endif %}</small>
+                            <strong>{{ stand.nombre_proyecto }}</strong><br>
+                            <small style="color:#6b7280;">{{ stand.curso }} - {{ stand.materia }}</small><br>
+                            <small style="color:#9ca3af;">Prof. {{ stand.profesor_cargo }}</small>
                         </td>
-                        <td>
-                            {% if proyecto.categoria %}
-                            <span class="category-badge">{{ proyecto.categoria }}</span>
-                            {% endif %}
-                        </td>
+                        <td><span class="codigo-badge">{{ stand.codigo_qr }}</span></td>
                         <td><strong style="font-size: 1.2rem;">{{ total_votos }}</strong></td>
                         <td>
-                            {% if total_votos == 0 %}
-                                <form method="POST" style="display: inline;" onsubmit="return confirm('¿Estás seguro de eliminar este proyecto?')">
+                            <div class="acciones-cell">
+                                <a href="{{ url_for('admin.editar_stand', stand_id=stand.id) }}" class="btn-link-action" style="background:#f59e0b;">✏️ Editar</a>
+                                <a href="{{ url_for('admin.stand_qr', stand_id=stand.id) }}" target="_blank" class="btn-link-action">👁️ Ver QR</a>
+                                <a href="{{ url_for('admin.stand_pdf', stand_id=stand.id) }}" class="btn-link-action pdf">⬇️ Descargar PDF</a>
+                                {% if total_votos == 0 %}
+                                <form method="POST" style="display: inline;" onsubmit="return confirm('¿Estás seguro de eliminar este stand?')">
                                     {{ form.hidden_tag() }}
                                     <input type="hidden" name="action" value="eliminar">
-                                    <input type="hidden" name="proyecto_id" value="{{ proyecto.id }}">
+                                    <input type="hidden" name="proyecto_id" value="{{ stand.id }}">
                                     <button type="submit" class="btn-danger">Eliminar</button>
                                 </form>
-                            {% else %}
+                                {% else %}
                                 <span class="no-delete-text">No eliminable</span>
-                            {% endif %}
+                                {% endif %}
+                            </div>
                         </td>
                     </tr>
                     {% endfor %}
@@ -162,5 +221,10 @@
             </tbody>
         </table>
     </div>
+</div>
+
+<!-- Footer con créditos -->
+<div class="footer">
+    Desarrollado por <a href="#">Cristian Gonzalo Segovia</a> - 5°U - ITEL 2025
 </div>
 {% endblock %}
