@@ -14,13 +14,15 @@
     .logo-main { width: 40px; height: 40px; background-color: #4C46C7; border-radius: 50%; }
     .page-header h1 { color: #4C46C7; font-size: 2rem; font-weight: 600; }
     .resumen { display: flex; gap: 20px; margin-bottom: 25px; flex-wrap: wrap; }
-    .resumen-box { flex: 1; min-width: 200px; padding: 20px; border-radius: 12px; text-align: center; }
+    .resumen-box { flex: 1; min-width: 180px; padding: 20px; border-radius: 12px; text-align: center; }
     .resumen-box.ok { background: #f0fdf4; border: 2px solid #22c55e; }
+    .resumen-box.warn { background: #fffbeb; border: 2px solid #f59e0b; }
     .resumen-box.error { background: #fef2f2; border: 2px solid #ef4444; }
     .resumen-box .num { font-size: 2.2rem; font-weight: 800; }
     .resumen-box.ok .num { color: #16a34a; }
+    .resumen-box.warn .num { color: #d97706; }
     .resumen-box.error .num { color: #dc2626; }
-    .resumen-box .label { font-size: 0.9rem; color: #666; font-weight: 600; }
+    .resumen-box .label { font-size: 0.85rem; color: #666; font-weight: 600; }
     .content-card { background: white; padding: 30px; border: 1px solid #e5e7eb; border-radius: 12px; margin-bottom: 25px; }
     .content-card h2 { font-size: 1.2rem; margin-bottom: 20px; }
     .preview-table { width: 100%; border-collapse: collapse; }
@@ -28,11 +30,14 @@
     .preview-table th { font-weight: 600; color: #6b7280; text-transform: uppercase; font-size: 0.8rem; }
     .errores-list { list-style: none; }
     .errores-list li { padding: 10px 0; border-bottom: 1px solid #fee2e2; color: #dc2626; font-size: 0.9rem; }
+    .duplicadas-list { list-style: none; }
+    .duplicadas-list li { padding: 10px 0; border-bottom: 1px solid #fef3c7; color: #92400e; font-size: 0.9rem; }
     .acciones { display: flex; gap: 15px; justify-content: center; margin-top: 25px; }
     .btn-secondary-link {
         padding: 14px 35px; background: #e5e7eb; color: #374151; border-radius: 50px;
         text-decoration: none; font-weight: 600;
     }
+    .sin-datos { text-align: center; color: #999; padding: 20px; }
 </style>
 
 <div class="logo-header">
@@ -47,20 +52,26 @@
 
 <div class="resumen">
     <div class="resumen-box ok">
-        <div class="num">{{ validas|length }}</div>
-        <div class="label">Stands listos para crear</div>
+        <div class="num">{{ nuevas|length }}</div>
+        <div class="label">Stands nuevos a crear</div>
     </div>
+    {% if duplicadas %}
+    <div class="resumen-box warn">
+        <div class="num">{{ duplicadas|length }}</div>
+        <div class="label">Ya existen (se omiten)</div>
+    </div>
+    {% endif %}
     {% if errores %}
     <div class="resumen-box error">
         <div class="num">{{ errores|length }}</div>
-        <div class="label">Filas con errores (se van a ignorar)</div>
+        <div class="label">Filas con errores (se ignoran)</div>
     </div>
     {% endif %}
 </div>
 
 {% if errores %}
 <div class="content-card">
-    <h2>⚠️ Filas con problemas</h2>
+    <h2>❌ Filas con problemas</h2>
     <ul class="errores-list">
         {% for err in errores %}
         <li>Fila {{ err.fila }}: {{ err.motivo }}</li>
@@ -69,8 +80,20 @@
 </div>
 {% endif %}
 
+{% if duplicadas %}
 <div class="content-card">
-    <h2>✅ Stands que se van a crear</h2>
+    <h2>⚠️ Ya existen en el sistema (se van a omitir)</h2>
+    <ul class="duplicadas-list">
+        {% for fila in duplicadas %}
+        <li>{{ fila.nombre_proyecto }} — Prof. {{ fila.profesor }} ({{ fila.curso }})</li>
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}
+
+<div class="content-card">
+    <h2>✅ Stands nuevos que se van a crear</h2>
+    {% if nuevas %}
     <table class="preview-table">
         <thead>
             <tr>
@@ -82,7 +105,7 @@
             </tr>
         </thead>
         <tbody>
-            {% for fila in validas %}
+            {% for fila in nuevas %}
             <tr>
                 <td><strong>{{ fila.nombre_proyecto }}</strong></td>
                 <td>{{ fila.profesor }}</td>
@@ -93,14 +116,23 @@
             {% endfor %}
         </tbody>
     </table>
+    {% else %}
+    <p class="sin-datos">No hay stands nuevos para crear (puede que todos ya existan o tengan errores).</p>
+    {% endif %}
 </div>
 
+{% if nuevas %}
 <form method="POST" action="{{ url_for('admin.confirmar_importar_stands') }}">
     {{ confirm_form.hidden_tag() }}
     <input type="hidden" name="datos_json" value="{{ datos_json }}">
     <div class="acciones">
         <a href="{{ url_for('admin.importar_stands') }}" class="btn-secondary-link">← Cancelar</a>
-        <button type="submit" class="btn-primary">✅ Confirmar e importar ({{ validas|length }} stands)</button>
+        <button type="submit" class="btn-primary">✅ Confirmar e importar ({{ nuevas|length }} stands)</button>
     </div>
 </form>
+{% else %}
+<div class="acciones">
+    <a href="{{ url_for('admin.importar_stands') }}" class="btn-secondary-link">← Volver a subir otro archivo</a>
+</div>
+{% endif %}
 {% endblock %}
