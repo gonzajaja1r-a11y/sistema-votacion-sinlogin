@@ -72,6 +72,9 @@
                 <p><strong>Profesor:</strong> {{ stand.profesor_cargo }}</p>
                 <p><strong>Materia:</strong> {{ stand.materia }}</p>
                 <p><strong>Curso:</strong> {{ stand.curso }}</p>
+                {% if stand.descripcion %}
+                <p style="margin-top: 12px; white-space: pre-line;"><strong>Sobre el proyecto:</strong><br>{{ stand.descripcion }}</p>
+                {% endif %}
             </div>
             <button class="btn-vote" id="btnVote" onclick="confirmarVoto()">Confirmar mi voto</button>
         </div>

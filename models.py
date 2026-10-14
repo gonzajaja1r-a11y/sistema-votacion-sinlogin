@@ -36,6 +36,7 @@ class Stand(db.Model):
     materia = db.Column(db.String(150), nullable=False)
     curso = db.Column(db.String(20), nullable=False)  # "1°A", "5°U"
     alumnos = db.Column(db.Text, nullable=False)  # Lista de nombres separados por coma
+    descripcion = db.Column(db.Text, nullable=True)  # Descripción del proyecto (opcional)
     activo = db.Column(db.Boolean, default=True)
     fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow)
     

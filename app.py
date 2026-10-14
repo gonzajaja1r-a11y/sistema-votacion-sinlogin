@@ -85,6 +85,10 @@ def generar_codigo_unico():
         if not Stand.query.filter_by(codigo_qr=codigo).first():
             return codigo
 
+def limpiar_texto_opcional(valor):
+    """Devuelve el texto sin espacios sobrantes, o None si quedó vacío"""
+    return (valor or '').strip() or None
+
 def generar_imagen_qr(stand):
     """Genera la tarjeta QR (imagen PIL) de un stand: QR + nombre de proyecto
     destacado + profesor/curso, lista para mostrar o incluir en un PDF."""
@@ -205,8 +209,10 @@ def generar_zip_stands(stands):
     zip_buf.seek(0)
     return zip_buf
 
-# Columnas obligatorias que debe tener el Excel a importar
+# Columnas que debe tener el Excel a importar
 COLUMNAS_REQUERIDAS = ['nombre_proyecto', 'profesor', 'curso', 'materia', 'alumnos']
+# Columnas que se leen si están, pero no son obligatorias
+COLUMNAS_OPCIONALES = ['descripcion']
 
 def leer_excel_stands(file_stream):
     """Lee un archivo .xlsx y devuelve (filas_validas, errores)"""
@@ -224,6 +230,7 @@ def leer_excel_stands(file_stream):
         return [], [{'fila': 1, 'motivo': f"Faltan columnas obligatorias: {', '.join(faltantes)}"}]
 
     idx = {c: headers.index(c) for c in COLUMNAS_REQUERIDAS}
+    idx_opc = {c: headers.index(c) for c in COLUMNAS_OPCIONALES if c in headers}
 
     validas = []
     errores = []
@@ -231,12 +238,14 @@ def leer_excel_stands(file_stream):
         if not fila or all(c is None or str(c).strip() == '' for c in fila):
             continue
 
-        def obtener(campo):
-            pos = idx[campo]
+        def obtener(campo, indices):
+            pos = indices[campo]
             val = fila[pos] if pos < len(fila) else None
             return str(val).strip() if val is not None else ''
 
-        datos = {campo: obtener(campo) for campo in COLUMNAS_REQUERIDAS}
+        datos = {campo: obtener(campo, idx) for campo in COLUMNAS_REQUERIDAS}
+        for campo in COLUMNAS_OPCIONALES:
+            datos[campo] = obtener(campo, idx_opc) if campo in idx_opc else ''
 
         faltan = [c for c in COLUMNAS_REQUERIDAS if not datos[c]]
         if faltan:
@@ -421,6 +430,7 @@ class StandForm(FlaskForm):
     materia = StringField('Materia', validators=[DataRequired()])
     curso = StringField('Curso', validators=[DataRequired()])
     alumnos = TextAreaField('Alumnos (separados por coma)', validators=[DataRequired()])
+    descripcion = TextAreaField('Descripción del proyecto (opcional)')
 
 class ImportarExcelForm(FlaskForm):
     archivo = FileField('Archivo Excel (.xlsx)', validators=[
@@ -533,7 +543,8 @@ def proyectos():
                 profesor_cargo=form.profesor_cargo.data,
                 materia=form.materia.data,
                 curso=form.curso.data,
-                alumnos=form.alumnos.data
+                alumnos=form.alumnos.data,
+                descripcion=limpiar_texto_opcional(form.descripcion.data)
             )
             try:
                 db.session.add(stand)
@@ -609,6 +620,7 @@ def editar_stand(stand_id):
         stand.materia = form.materia.data
         stand.curso = form.curso.data
         stand.alumnos = form.alumnos.data
+        stand.descripcion = limpiar_texto_opcional(form.descripcion.data)
         try:
             db.session.commit()
             flash(f'Stand "{stand.nombre_proyecto}" actualizado correctamente. El código QR ({stand.codigo_qr}) no cambió.', 'success')
@@ -733,7 +745,8 @@ def confirmar_importar_stands():
             profesor_cargo=fila['profesor'],
             materia=fila['materia'],
             curso=fila['curso'],
-            alumnos=fila['alumnos']
+            alumnos=fila['alumnos'],
+            descripcion=limpiar_texto_opcional(fila.get('descripcion'))
         )
         db.session.add(stand)
         stands_creados.append(stand)

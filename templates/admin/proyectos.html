@@ -159,6 +159,11 @@
                 {% endif %}
             </div>
 
+            <div class="form-group">
+                {{ form.descripcion.label }}
+                {{ form.descripcion(rows=3, placeholder="Qué hace o de qué trata el proyecto...") }}
+            </div>
+
             <button type="submit" class="btn-primary">Agregar Stand</button>
         </form>
     </div>
