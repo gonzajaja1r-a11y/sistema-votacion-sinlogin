@@ -90,79 +90,57 @@ def limpiar_texto_opcional(valor):
     return (valor or '').strip() or None
 
 def generar_imagen_qr(stand):
-    """Genera la tarjeta QR (imagen PIL) de un stand: QR + nombre de proyecto
-    destacado + profesor/curso, lista para mostrar o incluir en un PDF."""
+    """Genera la tarjeta QR de un stand usando la plantilla de la Muestra Anual:
+    pega el QR (con el logo del ITEL al centro) y completa Nombre del proyecto,
+    Curso y Profe después de los dos puntos."""
     url_voto = url_for('votar_stand', codigo=stand.codigo_qr, _external=True)
 
-    qr = qrcode.QRCode(version=None, error_correction=qrcode.constants.ERROR_CORRECT_M, box_size=10, border=2)
-    qr.add_data(url_voto)
-    qr.make(fit=True)
-    qr_img = qr.make_image(fill_color="#1a1a2e", back_color="white").convert('RGB')
+    img_dir = os.path.join(app.root_path, 'static', 'img')
+    font_path = os.path.join(app.root_path, 'static', 'fonts', 'DejaVuSerifCondensed.ttf')
 
-    ancho = 640
-    padding = 40
-    qr_size = ancho - padding * 2
-    qr_img = qr_img.resize((qr_size, qr_size))
-
-    font_titulo = ImageFont.load_default(size=34)
-    font_subtitulo = ImageFont.load_default(size=22)
-    font_caption = ImageFont.load_default(size=16)
-
-    def envolver_texto(draw, texto, font, max_width):
-        palabras = texto.split()
-        lineas = []
-        linea_actual = ""
-        for palabra in palabras:
-            prueba = (linea_actual + " " + palabra).strip()
-            bbox = draw.textbbox((0, 0), prueba, font=font)
-            if bbox[2] - bbox[0] <= max_width:
-                linea_actual = prueba
-            else:
-                if linea_actual:
-                    lineas.append(linea_actual)
-                linea_actual = palabra
-        if linea_actual:
-            lineas.append(linea_actual)
-        return lineas[:2]
-
-    dummy = Image.new('RGB', (10, 10))
-    dummy_draw = ImageDraw.Draw(dummy)
-    lineas_titulo = envolver_texto(dummy_draw, stand.nombre_proyecto, font_titulo, ancho - padding * 2)
-
-    subtitulo = f"Prof. {stand.profesor_cargo} - {stand.curso}"
-
-    alto_titulo = len(lineas_titulo) * 44
-    alto_total = padding + 24 + qr_size + 20 + alto_titulo + 10 + 30 + padding
-
-    canvas = Image.new('RGB', (ancho, alto_total), 'white')
+    # --- 1) Plantilla base (1024 x 1536) ---
+    canvas = Image.open(os.path.join(img_dir, 'plantilla_qr.png')).convert('RGB')
     draw = ImageDraw.Draw(canvas)
 
-    draw.rounded_rectangle([4, 4, ancho - 5, alto_total - 5], radius=24, outline=(102, 126, 234), width=4)
+    # --- 2) QR en negro, corrección H para que aguante el logo en el centro ---
+    qr = qrcode.QRCode(version=None, error_correction=qrcode.constants.ERROR_CORRECT_H,
+                       box_size=10, border=1)
+    qr.add_data(url_voto)
+    qr.make(fit=True)
+    qr_img = qr.make_image(fill_color="black", back_color="white").convert('RGB')
 
-    y = padding
-    caption = f"MUESTRA ANUAL ITEL {datetime.now().year}"
-    bbox = draw.textbbox((0, 0), caption, font=font_caption)
-    cw = bbox[2] - bbox[0]
-    draw.text(((ancho - cw) / 2, y), caption, font=font_caption, fill=(102, 126, 234))
-    y += 24
+    QR_SIZE = 520
+    CX, CY = 512, 793                      # centro del marco redondeado de la plantilla
+    qr_img = qr_img.resize((QR_SIZE, QR_SIZE), Image.NEAREST)
+    canvas.paste(qr_img, (CX - QR_SIZE // 2, CY - QR_SIZE // 2))
 
-    x_qr = (ancho - qr_size) // 2
-    canvas.paste(qr_img, (x_qr, y))
-    y += qr_size + 20
+    # --- 3) Logo ITEL al centro (con aro blanco para que no moleste al escaneo) ---
+    logo = Image.open(os.path.join(img_dir, 'logo-itel-qr.png')).convert('RGBA')
+    logo_d = 150
+    logo = logo.resize((logo_d, logo_d), Image.LANCZOS)
+    ring = logo_d + 16
+    draw.ellipse((CX - ring // 2, CY - ring // 2, CX + ring // 2, CY + ring // 2), fill='white')
+    canvas.paste(logo, (CX - logo_d // 2, CY - logo_d // 2), logo)
 
-    for linea in lineas_titulo:
-        bbox = draw.textbbox((0, 0), linea, font=font_titulo)
-        lw = bbox[2] - bbox[0]
-        draw.text(((ancho - lw) / 2, y), linea, font=font_titulo, fill=(30, 30, 30))
-        y += 44
+    # --- 4) Datos después de los ":" (x_inicio, x_fin, y de la línea) ---
+    def escribir(texto, x0, x1, y_linea, size=38, size_min=26):
+        texto = (texto or '').strip()
+        max_w = (x1 - x0) - 16
+        font = ImageFont.truetype(font_path, size)
+        while draw.textlength(texto, font=font) > max_w and size > size_min:
+            size -= 2
+            font = ImageFont.truetype(font_path, size)
+        if draw.textlength(texto, font=font) > max_w:      # todavía no entra: recortar con "…"
+            while len(texto) > 1 and draw.textlength(texto + '…', font=font) > max_w:
+                texto = texto[:-1]
+            texto = texto.rstrip() + '…'
+        draw.text((x0 + 8, y_linea - 6), texto, font=font, fill=(20, 20, 20), anchor='ls')
 
-    y += 10
-    bbox = draw.textbbox((0, 0), subtitulo, font=font_subtitulo)
-    sw = bbox[2] - bbox[0]
-    draw.text(((ancho - sw) / 2, y), subtitulo, font=font_subtitulo, fill=(100, 100, 100))
+    escribir(stand.nombre_proyecto, 532, 951, 1188)   # Nombre del proyecto:
+    escribir(stand.curso,           225, 950, 1271)   # Curso:
+    escribir(stand.profesor_cargo,  217, 937, 1359)   # Profe:
 
     return canvas
-
 def generar_pdf_bytes(stand):
     """Genera el PDF (bytes) con el QR del stand repetido 6 veces en grilla 2x3"""
     img = generar_imagen_qr(stand)
